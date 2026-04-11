@@ -1,0 +1,15 @@
+dependencies:
+- name: spire-server
+  repository: file://./charts/spire-server
+  version: 0.1.0
+- name: spire-agent
+  repository: file://./charts/spire-agent
+  version: 0.1.0
+- name: spiffe-csi-driver
+  repository: file://./charts/spiffe-csi-driver
+  version: 0.1.0
+- name: spiffe-oidc-discovery-provider
+  repository: file://./charts/spiffe-oidc-discovery-provider
+  version: 0.1.0
+digest: sha256:f9cb5dbf1b1204cb6d3091a12c73cc4aac2757afc72587a411f0959853479062
+generated: "2023-04-12T09:10:35.00158514Z"

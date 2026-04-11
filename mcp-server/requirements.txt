@@ -1,0 +1,7 @@
+mcp
+fastapi
+uvicorn
+PyJWT
+httpx
+pydantic
+sse-starlette

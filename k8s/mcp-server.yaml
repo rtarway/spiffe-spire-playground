@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-server
+  namespace: megamart-store-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-server
+  template:
+    metadata:
+      labels:
+        app: mcp-server
+      annotations:
+        # AUTOMATION: Tell Istio to fetch identity from the SPIRE socket
+        sidecar.istio.io/userVolume: '[{"name":"spire-socket", "hostPath":{"path":"/run/spire/edge-sockets"}}]'
+        sidecar.istio.io/userVolumeMount: '[{"name":"spire-socket", "mountPath":"/var/run/secrets/workload-spiffe-uds", "readOnly":true}]'
+    spec:
+      containers:
+      - name: mcp-server
+        image: mcp-server:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: "unix:///run/spire/sockets/spire-agent.sock"
+        - name: KEYCLOAK_URL
+          value: "http://keycloak.megamart-store-edge.svc.cluster.local:80/realms/megamart-edge"
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /run/spire/edge-sockets
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-server
+  namespace: megamart-store-apps
+spec:
+  # ClusterIP is sufficient since only AI Agent connects to it internally
+  type: ClusterIP
+  selector:
+    app: mcp-server
+  ports:
+  - port: 8001
+    targetPort: 8001

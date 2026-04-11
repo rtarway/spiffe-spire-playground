@@ -1,0 +1,219 @@
+# Default values for spire-server.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- SPIRE server currently runs with a sqlite database. Scaling to multiple instances will not work until we use an external database.
+replicaCount: 1
+
+image:
+  # registry: gcr.io
+  # repository: spiffe-io/spire-server
+  registry: ghcr.io
+  repository: spiffe/spire-server
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  version: ""
+
+imagePullSecrets: []
+nameOverride: ""
+namespaceOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8081
+  annotations: {}
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # requests:
+  #   cpu: 200m
+  #   memory: 256Mi
+  # limits:
+  #   cpu: 200m
+  #   memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+topologySpreadConstraints: []
+
+dataStorage:
+  enabled: true
+  size: 1Gi
+  accessMode: ReadWriteOnce
+  storageClass: null
+
+logLevel: info
+jwtIssuer: oidc-discovery.example.org
+
+clusterName: example-cluster
+trustDomain: example.org
+
+bundleConfigMap: spire-bundle
+
+# -- This is the value of your clusters `kubeadm init --service-dns-domain` flag
+clusterDomain: cluster.local
+
+federation:
+  enabled: false
+  bundleEndpoint:
+    port: 8443
+    address: "0.0.0.0"
+
+ca_subject:
+  country: NL
+  organization: Example
+  common_name: example.org
+
+upstreamAuthority:
+  disk:
+    enabled: false
+    secret:
+      # -- If disabled requires you to create a secret with the given keys (certificate, key and optional bundle) yourself.
+      create: true
+      # -- If secret creation is disabled, the secret with this name will be used.
+      name: "spiffe-upstream-ca"
+      # -- If secret creation is enabled, will create a secret with following certificate info
+      data:
+        certificate: ""
+        key: ""
+        bundle: ""
+  certManager:
+    enabled: false
+    rbac:
+      create: true
+    issuer_name: "spire-ca"
+    issuer_kind: "Issuer"
+    issuer_group: "cert-manager.io"
+    # -- Specify to use a namespace other then the one the chart is installed into
+    namespace: ""
+    kube_config_file: ""
+
+notifier:
+  k8sbundle:
+    # -- Namespace to push the bundle into, if blank will default to SPIRE Server namespace
+    namespace: ""
+
+controllerManager:
+  enabled: false
+
+  image:
+    registry: ghcr.io
+    repository: spiffe/spire-controller-manager
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    version: "0.2.2"
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  service:
+    type: ClusterIP
+    port: 443
+    annotations: {}
+
+  ignoreNamespaces:
+    - kube-system
+    - kube-public
+    - local-path-storage
+
+  identities:
+    enabled: true
+
+    spiffeIDTemplate: spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}
+    podSelector: {}
+      # matchLabels:
+      #   spiffe.io/spiffe-id: "true"
+    namespaceSelector: {}
+      # matchLabels:
+      #   spiffe.io/spiffe-id: "true"
+    dnsNameTemplates: []
+      # - '{{ index .PodMeta.Labels "app.kubernetes.io/name" }}.{{ .PodMeta.Namespace }}.svc.cluster.local'
+
+  validatingWebhookConfiguration:
+    failurePolicy: Fail
+    upgradeHook:
+      image:
+        registry: cgr.dev
+        repository: chainguard/kubectl
+        pullPolicy: IfNotPresent
+        version: latest
+
+telemetry:
+  prometheus:
+    enabled: false
+    podMonitor:
+      enabled: false
+      # -- Override where to install the podMonitor, if not set will use the same namespace as the spire-server
+      namespace: ""
+      labels: {}
+
+extraVolumes: []
+extraVolumeMounts: []
+extraContainers: []
+
+initContainers: []
+
+# -- The CA key type to use, possible values are rsa-2048, rsa-4096, ec-p256, ec-p384 (AWS requires the use of RSA.  EC cryptography is not supported)
+caKeyType: rsa-2048
+caTTL: 24h
+defaultX509SvidTTL: 4h
+defaultJwtSvidTTL: 1h
+
+nodeAttestor:
+  k8sPsat:
+    enabled: true
+    serviceAccountAllowList: []

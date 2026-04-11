@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+spiffe>=0.2.6
+PyJWT
+requests
+pydantic
+httpx

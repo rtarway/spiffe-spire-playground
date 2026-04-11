@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opa-policy
+  namespace: megamart-store-edge
+data:
+  policy.rego: |
+    package authz
+
+    import input.attributes.request.http.headers
+
+    default allow = false
+
+    # 1. Main entry point
+    allow {
+        validate_spiffe_id
+        validate_jwt
+    }
+
+    # 2. Extract and Validate SPIFFE ID from x-forwarded-client-cert
+    # Format: ...;URI=spiffe://megamart.com/ns/megamart-store-edge/sa/ai-agent;...
+    validate_spiffe_id {
+        xfcc := headers["x-forwarded-client-cert"]
+        contains(xfcc, "URI=spiffe://megamart.com/ns/megamart-store-edge/sa/ai-agent")
+    }
+
+    # 3. Decode and validate the Token Claims
+    validate_jwt {
+        [_, payload, _] := io.jwt.decode(bearer_token)
+        
+        # Check for strictly down-scoped role
+        roles := payload.realm_access.roles
+        "mcp-executor" in roles
+        
+        # Guardrail: Explicitly DENY if broad human role is present (Agent God-Mode Prevention)
+        not "store-associate" in roles
+    }
+
+    # Helper: Extract Bearer Token
+    bearer_token = t {
+        v := headers.authorization
+        startswith(v, "Bearer ")
+        t := substring(v, count("Bearer "), -1)
+    }
+
+    # Helper: Check if item is in array
+    contains_role(roles, role) {
+        roles[_] == role
+    }
+
+    # Re-writing role check using set-like syntax for readability
+    "mcp-executor" in roles {
+        roles[_] == "mcp-executor"
+    }
+    
+    "store-associate" in roles {
+        roles[_] == "store-associate"
+    }

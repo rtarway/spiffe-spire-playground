@@ -1,0 +1,104 @@
+# Default values for spire-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  # registry: gcr.io
+  # repository: spiffe-io/spire-agent
+  registry: ghcr.io
+  repository: spiffe/spire-agent
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  version: ""
+
+imagePullSecrets: []
+nameOverride: ""
+namespaceOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # requests:
+  #   cpu: 50m
+  #   memory: 64Mi
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+logLevel: info
+clusterName: example-cluster
+trustDomain: example.org
+
+bundleConfigMap: spire-bundle
+
+server:
+  address: ""
+  port: 8081
+  namespaceOverride: ""
+
+healthChecks:
+  # -- override the host port used for health checking
+  port: 9980
+
+waitForIt:
+  image:
+    registry: cgr.dev
+    repository: chainguard/wait-for-it
+    pullPolicy: IfNotPresent
+    version: latest-20230113
+  resources: {}
+
+# workloadAttestors determine a workload's properties and then generate a set of selectors associated with it.
+workloadAttestors:
+  # unix is a workload attestor which generates unix-based selectors like 'uid' and 'gid'.
+  unix:
+    # -- enables the Unix workload attestor
+    enabled: false
+
+telemetry:
+  prometheus:
+    enabled: false
+    port: 9988
+    podMonitor:
+      enabled: false
+      # -- Override where to install the podMonitor, if not set will use the same namespace as the spire-agent
+      namespace: ""
+      labels: {}
+
+socketPath: /run/spire/agent-sockets/spire-agent.sock
+
+# -- Priority class assigned to daemonset pods
+priorityClassName: ""
+
+extraVolumes: []
+extraVolumeMounts: []
+extraContainers: []
+
+initContainers: []
