@@ -145,15 +145,7 @@ resource "helm_release" "spire_edge" {
   }
   set {
     name  = "spiffe-oidc-discovery-provider.enabled"
-    value = "true"
-  }
-  set {
-    name  = "spiffe-oidc-discovery-provider.config.workloadAPISocketPath"
-    value = "/spiffe-workload-api/spire-agent.sock"
-  }
-  set {
-    name  = "spiffe-oidc-discovery-provider.config.acme.tosAccepted"
-    value = "true"
+    value = "false"
   }
   set {
     name  = "spiffe-csi-driver.enabled"
@@ -176,6 +168,137 @@ resource "helm_release" "spire_edge" {
   set {
     name  = "spire-server.notifier.k8sbundle.namespace"
     value = kubernetes_namespace.store_edge.metadata[0].name
+  }
+}
+
+# --- NATIVE OIDC DISCOVERY PIVOT ---
+
+resource "kubernetes_service_account" "oidc_discovery" {
+  metadata {
+    name      = "spire-edge-oidc-discovery-provider"
+    namespace = kubernetes_namespace.store_edge.metadata[0].name
+  }
+}
+
+
+resource "kubernetes_config_map" "oidc_discovery_config" {
+  metadata {
+    name      = "spire-edge-oidc-discovery-config"
+    namespace = kubernetes_namespace.store_edge.metadata[0].name
+  }
+
+  data = {
+    "oidc-discovery-provider.conf" = <<-EOT
+      log_level = "info"
+      domains = ["spire-edge-spiffe-oidc-discovery-provider", "spire-edge-spiffe-oidc-discovery-provider.megamart-store-edge", "spire-edge-spiffe-oidc-discovery-provider.megamart-store-edge.svc.cluster.local", "localhost"]
+      acme {
+        cache_dir = "/run/spire"
+        tos_accepted = true
+      }
+      workload_api {
+        socket_path = "/spiffe-workload-api/spire-agent.sock"
+        trust_domain = "megamart.com"
+      }
+      health_checks {
+        bind_addr = ":8008"
+      }
+      serving {
+        bind_addr = ":443"
+      }
+    EOT
+  }
+}
+
+resource "kubernetes_deployment" "oidc_discovery" {
+  metadata {
+    name      = "spire-native-oidc-discovery"
+    namespace = kubernetes_namespace.store_edge.metadata[0].name
+  }
+
+  spec {
+    replicas = 1
+    selector {
+      match_labels = {
+        app = "oidc-discovery"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "oidc-discovery"
+        }
+      }
+
+      spec {
+        service_account_name = kubernetes_service_account.oidc_discovery.metadata[0].name
+        container {
+          name  = "oidc-discovery-provider"
+          image = "ghcr.io/spiffe/oidc-discovery-provider:1.6.1"
+
+          args = ["-config", "/run/spire/oidc/config/oidc-discovery-provider.conf"]
+
+          port {
+            container_port = 443
+          }
+          port {
+            container_port = 8008
+          }
+
+          volume_mount {
+            name       = "spiffe-workload-api"
+            mount_path = "/spiffe-workload-api"
+            read_only  = true
+          }
+
+          volume_mount {
+            name       = "config"
+            mount_path = "/run/spire/oidc/config"
+            read_only  = true
+          }
+        }
+
+        volume {
+          name = "spiffe-workload-api"
+          host_path {
+            path = "/run/spire/agent-sockets"
+            type = "Directory"
+          }
+        }
+
+        volume {
+          name = "config"
+          config_map {
+            name = kubernetes_config_map.oidc_discovery_config.metadata[0].name
+          }
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_service" "oidc_discovery" {
+  metadata {
+    name      = "spire-edge-spiffe-oidc-discovery-provider"
+    namespace = kubernetes_namespace.store_edge.metadata[0].name
+  }
+
+  spec {
+    selector = {
+      app = "oidc-discovery"
+    }
+
+    port {
+      name        = "https"
+      port        = 443
+      target_port = 443
+    }
+
+    port {
+      name        = "health"
+      port        = 8008
+      target_port = 8008
+    }
   }
 }
 
@@ -246,6 +369,14 @@ resource "null_resource" "spire_workload_registrations" {
         -spiffeID "spiffe://megamart.com/ns/${kubernetes_namespace.store_apps.metadata[0].name}/sa/default" \
         -selector "k8s:ns:${kubernetes_namespace.store_apps.metadata[0].name}" \
         -selector "k8s:sa:default"
+
+      # 7. Create OIDC Discovery Provider Entry
+      $KUBECTL exec -n ${kubernetes_namespace.store_edge.metadata[0].name} spire-edge-server-0 -c spire-server -- \
+        /opt/spire/bin/spire-server entry create \
+        -parentID "$AGENT_ID" \
+        -spiffeID "spiffe://megamart.com/ns/${kubernetes_namespace.store_edge.metadata[0].name}/sa/${kubernetes_service_account.oidc_discovery.metadata[0].name}" \
+        -selector "k8s:ns:${kubernetes_namespace.store_edge.metadata[0].name}" \
+        -selector "k8s:sa:${kubernetes_service_account.oidc_discovery.metadata[0].name}"
     EOT
   }
 }
