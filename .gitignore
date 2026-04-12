@@ -32,3 +32,6 @@ walkthrough.md
 
 # Log files
 *.log
+
+# Binary archives
+*.tgz
