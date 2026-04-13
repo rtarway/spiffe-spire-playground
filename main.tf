@@ -172,7 +172,7 @@ resource "null_resource" "spire_trust_bundle_sync" {
       echo "[2/4] Extracting Cloud Authority trust bundle..."
       $KUBECTL exec -n megamart-cloud-tier spire-cloud-server-0 \
         -c spire-server -- \
-        /opt/spire/bin/spire-server bundle show > /tmp/cloud-bundle.crt
+        /opt/spire/bin/spire-server bundle show -format pem > /tmp/cloud-bundle.crt
 
       echo "[3/4] Injecting Cloud bundle into Edge namespace as spire-bundle ConfigMap..."
       $KUBECTL create configmap spire-bundle \
