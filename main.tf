@@ -2,6 +2,7 @@ terraform {
   required_providers {
     kubernetes = { source = "hashicorp/kubernetes", version = "~> 2.0" }
     helm       = { source = "hashicorp/helm", version = "~> 2.0" }
+    keycloak   = { source = "keycloak/keycloak", version = ">= 5.0.0" }
   }
 }
 
@@ -18,26 +19,21 @@ provider "helm" {
   }
 }
 
+# The Identity Authority Provider (Assumes NodePort 30080)
+provider "keycloak" {
+  client_id = "admin-cli"
+  url       = "http://localhost:30080"
+  username  = "admin"
+  password  = "megamart_secure_admin_pass"
+}
+
+# ==========================================
+# STAGE 1: GLOBAL IDENTITY AUTHORITY (CLOUD)
+# ==========================================
+# Birthed once to anchor the megamart.com trust domain.
+
 resource "kubernetes_namespace" "cloud_tier" {
   metadata { name = "megamart-cloud-tier" }
-}
-
-resource "kubernetes_namespace" "store_edge" {
-  metadata {
-    name = "megamart-store-edge"
-    labels = {
-      "istio-injection" = "enabled"
-    }
-  }
-}
-
-resource "kubernetes_namespace" "store_apps" {
-  metadata {
-    name = "megamart-store-apps"
-    labels = {
-      "istio-injection" = "enabled"
-    }
-  }
 }
 
 resource "helm_release" "spire_crds" {
@@ -95,6 +91,51 @@ resource "helm_release" "spire_cloud" {
   }
 }
 
+# ==========================================
+# STAGE 2: REPEATABLE STORE EDGE (PER-STORE)
+# ==========================================
+# Birthed for each store as it onboards to the fleet.
+
+resource "kubernetes_namespace" "store_edge" {
+  metadata {
+    name = "megamart-store-edge"
+    labels = {
+      "istio-injection" = "enabled"
+    }
+  }
+}
+
+resource "kubernetes_namespace" "store_apps" {
+  metadata {
+    name = "megamart-store-apps"
+    labels = {
+      "istio-injection" = "enabled"
+    }
+  }
+}
+
+
+# Data source to read the Cloud Trust Bundle across namespaces
+data "kubernetes_config_map" "spire_cloud_bundle" {
+  metadata {
+    name      = "spire-bundle"
+    namespace = kubernetes_namespace.cloud_tier.metadata[0].name
+  }
+  depends_on = [helm_release.spire_cloud]
+}
+
+# Project the Cloud SPIRE Bundle into the Edge namespace to bridge the trust gap
+resource "kubernetes_config_map" "spire_cloud_bundle_bridge" {
+  metadata {
+    name      = "spire-bundle"
+    namespace = kubernetes_namespace.store_edge.metadata[0].name
+  }
+
+  data = {
+    "bundle.crt" = data.kubernetes_config_map.spire_cloud_bundle.data["bundle.crt"]
+  }
+}
+
 resource "helm_release" "spire_edge" {
   depends_on = [helm_release.spire_crds, helm_release.spire_cloud]
   name       = "spire-edge"
@@ -108,8 +149,8 @@ resource "helm_release" "spire_edge" {
   }
 
   set {
-    name  = "spire-server.nodeAttestor.k8sPSAT.enabled"
-    value = "true"
+    name  = "global.spire.clusterName"
+    value = "megamart-cluster"
   }
 
   set {
@@ -136,12 +177,18 @@ resource "helm_release" "spire_edge" {
     value = "true"
   }
   set {
-    name  = "spire-server.upstreamAuthority.spire.serverAddr"
+    name  = "spire-server.upstreamAuthority.spire.config.serverAddr"
     value = "spire-cloud-server.megamart-cloud-tier.svc.cluster.local"
   }
   set {
-    name  = "spire-server.upstreamAuthority.spire.serverPort"
+    name  = "spire-server.upstreamAuthority.spire.config.serverPort"
     value = "8443"
+  }
+  
+  # Crucial: Provide the Cloud Root CA to verify the upstream server
+  set {
+    name  = "spire-server.upstreamAuthority.spire.config.rootCas"
+    value = data.kubernetes_config_map.spire_cloud_bundle.data["bundle.crt"]
   }
   set {
     name  = "spiffe-oidc-discovery-provider.enabled"
@@ -149,7 +196,7 @@ resource "helm_release" "spire_edge" {
   }
   set {
     name  = "spiffe-csi-driver.enabled"
-    value = "true"
+    value = "false"
   }
   set {
     name  = "spiffe-csi-driver.config.agentSocketPath"
@@ -464,7 +511,6 @@ resource "helm_release" "keycloak" {
   }
 }
 
-# --- STEP 4.5: IDENTITY PROVISIONING JOB ---
 resource "kubernetes_service_account" "keycloak_provisioner" {
   metadata {
     name      = "keycloak-provisioner"
@@ -472,67 +518,105 @@ resource "kubernetes_service_account" "keycloak_provisioner" {
   }
 }
 
-resource "kubernetes_job" "keycloak_provisioning" {
-  metadata {
-    name      = "keycloak-provisioning"
-    namespace = kubernetes_namespace.store_edge.metadata[0].name
-  }
-  spec {
-    template {
-      metadata {
-        name = "keycloak-provisioning"
-      }
-      spec {
-        container {
-          name  = "keycloak-provisioning"
-          image = "bitnamilegacy/keycloak:latest"
-          command = ["/bin/bash", "-c"]
-          args    = [<<-EOT
-            echo "Waiting for Keycloak OIDC Discovery (HTTP 200)..."
-            until [ "$(curl -s -o /dev/null -w "%%{http_code}" http://keycloak/realms/master/.well-known/openid-configuration)" == "200" ]; do 
-              echo "Keycloak OIDC not ready yet... retrying in 5s"
-              sleep 5
-            done
-            
-            KCADM=/opt/bitnami/keycloak/bin/kcadm.sh
-            
-            echo "Attempting to authenticate..."
-            MAX_RETRIES=30
-            COUNT=0
-            # Anchor --config at the END of the command
-            until $KCADM config credentials --server http://keycloak --realm master --user admin --password megamart_secure_admin_pass --config /tmp/kcadm.config || [ $COUNT -eq $MAX_RETRIES ]; do
-              echo "Auth failed, retrying in 5s... ($COUNT/$MAX_RETRIES)"
-              COUNT=$((COUNT + 1))
-              sleep 5
-            done
-            
-            if [ $COUNT -eq $MAX_RETRIES ]; then
-              echo "FAILED: Could not authenticate to Keycloak after $MAX_RETRIES attempts."
-              exit 1
-            fi
-            
-            echo "Creating Megamart-Edge Realm..."
-            $KCADM create realms -s realm=megamart-edge -s enabled=true --config /tmp/kcadm.config || echo "Realm might already exist"
-            
-            echo "Creating WebApp Client..."
-            $KCADM create clients -r megamart-edge -s clientId=webapp-client -s enabled=true -s publicClient=true \
-              -s 'redirectUris=["http://localhost:30000/*"]' \
-              -s 'webOrigins=["http://localhost:30000"]' \
-              -s directAccessGrantsEnabled=true --config /tmp/kcadm.config || echo "Client might already exist"
-            
-            echo "Creating Associate User..."
-            $KCADM create users -r megamart-edge -s username=associate -s enabled=true --config /tmp/kcadm.config || echo "User might already exist"
-            $KCADM set-password -r megamart-edge --username associate --new-password associate --config /tmp/kcadm.config
-            
-            echo "Provisioning Complete!"
-          EOT
-          ]
-        }
-        restart_policy = "OnFailure"
-      }
-    }
+# --- UNIFIED IDENTITY AUTHORITY: KEYCLOAK CONFIG ---
+# This section definitively anchors the Megamart identity realm.
+
+resource "keycloak_realm" "megamart_edge" {
+  depends_on = [helm_release.keycloak]
+  realm      = "megamart-edge"
+  enabled    = true
+}
+
+resource "keycloak_role" "store_associate" {
+  realm_id = keycloak_realm.megamart_edge.id
+  name     = "store-associate"
+}
+
+resource "keycloak_role" "mcp_executor" {
+  realm_id = keycloak_realm.megamart_edge.id
+  name     = "mcp-executor"
+}
+
+# 1. Device Client (Human Login)
+resource "keycloak_openid_client" "associate_device" {
+  realm_id                     = keycloak_realm.megamart_edge.id
+  client_id                    = "webapp-client" # Reconciled with top-level name
+  name                         = "Store Associate Device WebApp"
+  enabled                      = true
+  access_type                  = "PUBLIC"
+  standard_flow_enabled        = true
+  direct_access_grants_enabled = true
+  valid_redirect_uris          = ["http://localhost:30000/*"]
+  web_origins                  = ["http://localhost:30000", "*"]
+}
+
+# 2. MCP Server (Resource Server)
+resource "keycloak_openid_client" "mcp_server" {
+  realm_id                     = keycloak_realm.megamart_edge.id
+  client_id                    = "mcp-server"
+  name                         = "MCP Server API"
+  enabled                      = true
+  access_type                  = "CONFIDENTIAL"
+  service_accounts_enabled     = true
+  full_scope_allowed           = false
+}
+
+# 3. AI Agent (Sovereign Executor)
+resource "keycloak_openid_client" "ai_agent" {
+  realm_id                     = keycloak_realm.megamart_edge.id
+  client_id                    = "ai-agent"
+  name                         = "AI Agent Backend"
+  enabled                      = true
+  access_type                  = "CONFIDENTIAL"
+  service_accounts_enabled     = true
+  client_authenticator_type    = "client-secret"
+  client_secret               = "ai-agent-secret"
+}
+
+# 4. TOKEN EXCHANGE POLICY
+resource "keycloak_openid_client_permissions" "mcp_server_perms" {
+  realm_id  = keycloak_realm.megamart_edge.id
+  client_id = keycloak_openid_client.mcp_server.id
+
+  token_exchange_scope {
+    decision_strategy = "UNANIMOUS"
+    policies          = [keycloak_openid_client_client_policy.ai_agent_policy.id]
   }
 }
+
+resource "keycloak_openid_client_client_policy" "ai_agent_policy" {
+  realm_id           = keycloak_realm.megamart_edge.id
+  resource_server_id = keycloak_openid_client.mcp_server.id
+  name               = "ai-agent-exchange-policy"
+  clients            = [keycloak_openid_client.ai_agent.id]
+  decision_strategy  = "UNANIMOUS"
+  logic              = "POSITIVE"
+}
+
+resource "keycloak_user" "associate_user" {
+  realm_id       = keycloak_realm.megamart_edge.id
+  username       = "associate"
+  enabled        = true
+  email_verified = true
+  initial_password {
+    value     = "associate"
+    temporary = false
+  }
+}
+
+resource "keycloak_user_roles" "associate_user_roles" {
+  realm_id = keycloak_realm.megamart_edge.id
+  user_id  = keycloak_user.associate_user.id
+  role_ids = [keycloak_role.store_associate.id]
+}
+
+resource "keycloak_user_roles" "ai_agent_sa_roles" {
+  realm_id = keycloak_realm.megamart_edge.id
+  user_id  = keycloak_openid_client.ai_agent.service_account_user_id
+  role_ids = [keycloak_role.mcp_executor.id]
+}
+
+# --- LEGACY BOOTSTRAP JOB REMOVED (REPLACED BY UNIFIED TERRAFORM) ---
 
 resource "kubernetes_service_account" "ai_agent" {
   metadata {

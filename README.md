@@ -51,8 +51,9 @@ The OIDC provider (containerized) is currently unable to bridge its internal han
 ./build_images.sh 
 ```
 
-### Stage 2: Core Mesh Infrastructure 🛡️
+### Stage 2: Unified Managed Infrastructure 🛡️
 ```bash
+# Initialize and Apply the entire Sovereign Edge stack
 terraform init
 terraform apply -auto-approve
 ```
