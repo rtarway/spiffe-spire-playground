@@ -35,6 +35,16 @@ resource "helm_release" "istiod" {
     pilot:
       env:
         PILOT_CERT_PROVIDER: "spire"
+        SPRIFFE_ENDPOINT_SOCKET: "unix:///run/spire/sockets/spire-agent.sock"
+      volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
+      volumes:
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
 
     meshConfig:
       trustDomain: "megamart.com"

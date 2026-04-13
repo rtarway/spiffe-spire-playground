@@ -2,7 +2,7 @@ terraform {
   required_providers {
     kubernetes = { source = "hashicorp/kubernetes", version = "~> 2.0" }
     helm       = { source = "hashicorp/helm", version = "~> 2.0" }
-    # keycloak   = { source = "keycloak/keycloak", version = ">= 5.0.0" }
+    keycloak   = { source = "mrparkers/keycloak", version = ">= 4.0.0" }
   }
 }
 
@@ -36,7 +36,7 @@ resource "kubernetes_namespace" "cloud_tier" {
   metadata {
     name = "megamart-cloud-tier"
     labels = {
-      "istio-injection" = "enabled"
+      "istio-injection" = "disabled"
     }
   }
 }
@@ -54,6 +54,7 @@ resource "helm_release" "spire_cloud" {
   repository = "https://spiffe.github.io/helm-charts-hardened"
   chart      = "spire"
   namespace  = kubernetes_namespace.cloud_tier.metadata[0].name
+  wait       = false
 
   set {
     name  = "global.spire.trustDomain"
@@ -75,11 +76,6 @@ resource "helm_release" "spire_cloud" {
     # Obscured custom port for ultra secure setup
     name  = "spire-server.service.port"
     value = "8443"
-  }
-  set {
-    # DE Tip: Use PSAT for secure local node attestation
-    name  = "spire-server.nodeAttestor.k8sPSAT.enabled"
-    value = "true"
   }
   set {
     name  = "spire-agent.nodeAttestor.k8sPSAT.enabled"
@@ -109,6 +105,7 @@ resource "helm_release" "spire_cloud" {
 
   values = [<<-YAML
     spire-server:
+      caTTL: "336h"
       registrar:
         enabled: true
         config:
@@ -133,7 +130,7 @@ resource "kubernetes_namespace" "store_edge" {
   metadata {
     name = "megamart-store-edge"
     labels = {
-      "istio-injection" = "enabled"
+      "istio-injection" = "disabled"
     }
   }
 }
@@ -198,6 +195,7 @@ resource "helm_release" "spire_edge" {
   repository = "https://spiffe.github.io/helm-charts-hardened"
   chart      = "spire"
   namespace  = kubernetes_namespace.store_edge.metadata[0].name
+  wait       = false
 
   set {
     name  = "global.spire.trustDomain"
@@ -210,43 +208,8 @@ resource "helm_release" "spire_edge" {
   }
 
   set {
-    name  = "spire-agent.nodeAttestor.k8sPSAT.enabled"
-    value = "true"
-  }
-  set {
-    name  = "spire-agent.healthChecks.port"
-    value = "9981"
-  }
-  set {
-    name  = "spire-agent.socketPath"
-    value = "/run/spire/sockets/spire-agent.sock"
-  }
-  
-  # Ensure the socket is world-readable so non-root Istiod can talk to it
-  set {
-    name  = "spire-agent.config.WorkloadAPI.socket_allow_all"
-    value = "true"
-  }
-
-  set {
-    name  = "spire-server.ca_subject.common_name"
-    value = "megamart.com"
-  }
-  set {
     name  = "spire-server.ca_subject.organization"
     value = "MegaMart"
-  }
-  set {
-    name  = "spire-server.upstreamAuthority.spire.enabled"
-    value = "true"
-  }
-  set {
-    name  = "spire-server.upstreamAuthority.spire.config.serverAddr"
-    value = "spire-cloud-server.megamart-cloud-tier.svc.cluster.local"
-  }
-  set {
-    name  = "spire-server.upstreamAuthority.spire.config.serverPort"
-    value = "8443"
   }
   
   # NOTE: rootCas for upstream authority verification is handled by the
@@ -272,6 +235,11 @@ resource "helm_release" "spire_edge" {
     name  = "spire-server.controllerManager.validatingWebhookConfiguration.upgradeHook.image.repository"
     value = "bitnami/kubectl"
   }
+  
+  set {
+    name  = "spire-agent.healthChecks.port"
+    value = "9981"
+  }
 
   # AUTOMATION: Automatically push trust bundle to local namespace (for Agent)
   set {
@@ -281,6 +249,13 @@ resource "helm_release" "spire_edge" {
 
   values = [<<-YAML
     spire-server:
+      caTTL: "336h"
+      upstreamAuthority:
+        spire:
+          enabled: true
+          config:
+            serverAddr: "spire-cloud-server.megamart-cloud-tier.svc.cluster.local"
+            serverPort: 8443
       registrar:
         enabled: true
         config:
@@ -289,6 +264,8 @@ resource "helm_release" "spire_edge" {
         sidecar.istio.io/inject: "false"
         traffic.sidecar.istio.io/excludeInboundPorts: "8081,8443"
     spire-agent:
+      healthChecks:
+        port: 9981
       podAnnotations:
         sidecar.istio.io/inject: "false"
         traffic.sidecar.istio.io/excludeInboundPorts: "8081,8443"
@@ -296,7 +273,124 @@ resource "helm_release" "spire_edge" {
   ]
 }
 
-# --- NATIVE OIDC DISCOVERY PIVOT ---
+resource "null_resource" "spire_edge_config_patch" {
+  depends_on = [helm_release.spire_edge]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      KUBECTL=/Users/rtarway/.rd/bin/kubectl
+      
+      echo "Injecting UpstreamAuthority plugin into Edge Server ConfigMap..."
+      $KUBECTL patch configmap spire-edge-server -n megamart-store-edge --type merge -p '
+      data:
+        server.conf: |
+          server {
+            bind_address = "0.0.0.0"
+            bind_port = "8081"
+            trust_domain = "megamart.com"
+            data_dir = "/run/spire/data"
+            log_level = "info"
+            ca_key_type = "rsa-2048"
+            ca_ttl = "336h"
+            ca_subject = {
+              country = ["NL"],
+              organization = ["MegaMart"],
+              common_name = "megamart.com",
+            }
+          }
+          plugins {
+            DataStore "sql" {
+              plugin_data {
+                database_type = "sqlite3"
+                connection_string = "/run/spire/data/datastore.sqlite3"
+              }
+            }
+            NodeAttestor "k8s_psat" {
+              plugin_data {
+                clusters = {
+                  "megamart-cluster" = {
+                    service_account_allow_list = ["megamart-store-edge:spire-edge-agent"]
+                  }
+                }
+              }
+            }
+            KeyManager "disk" {
+              plugin_data {
+                keys_path = "/run/spire/data/keys.json"
+              }
+            }
+            UpstreamAuthority "spire" {
+              plugin_data {
+                server_address = "spire-cloud-server.megamart-cloud-tier.svc.cluster.local"
+                server_port = 8443
+              }
+            }
+            Notifier "k8sbundle" {
+              plugin_data {
+                namespace = "megamart-store-edge"
+              }
+            }
+          }
+          health_checks {
+            listener_enabled = true
+            bind_address = "0.0.0.0"
+            bind_port = "8080"
+            live_path = "/live"
+            ready_path = "/ready"
+          }
+      '
+      
+      echo "Patching Edge Agent DaemonSet port to 9981..."
+      $KUBECTL patch daemonset spire-edge-agent -n megamart-store-edge --type json -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/ports/0/containerPort", "value": 9981}]'
+      
+      echo "Injecting socket_allow_all into Edge Agent ConfigMap..."
+      $KUBECTL patch configmap spire-edge-agent -n megamart-store-edge --type merge -p '
+      data:
+        agent.conf: |
+          agent {
+            data_dir = "/run/spire"
+            log_level = "info"
+            server_address = "spire-edge-server"
+            server_port = "8081"
+            socket_path = "/run/spire/sockets/spire-agent.sock"
+            trust_bundle_path = "/run/spire/bundle/bundle.crt"
+            trust_domain = "megamart.com"
+          }
+          plugins {
+            NodeAttestor "k8s_psat" {
+              plugin_data {
+                cluster = "megamart-cluster"
+              }
+            }
+            KeyManager "memory" {
+              plugin_data {
+              }
+            }
+            WorkloadAttestor "k8s" {
+              plugin_data {
+                skip_kubelet_verification = true
+              }
+            }
+          }
+          health_checks {
+            listener_enabled = true
+            bind_address = "0.0.0.0"
+            bind_port = "9981"
+            live_path = "/live"
+            ready_path = "/ready"
+          }
+      '
+
+      echo "Restarting Edge Server to apply patched config..."
+      $KUBECTL rollout restart statefulset/spire-edge-server -n megamart-store-edge
+      $KUBECTL rollout status statefulset/spire-edge-server -n megamart-store-edge --timeout=120s
+
+      echo "Restarting Edge Agent to apply patched config..."
+      $KUBECTL rollout restart daemonset/spire-edge-agent -n megamart-store-edge
+      $KUBECTL rollout status daemonset/spire-edge-agent -n megamart-store-edge --timeout=120s
+    EOT
+  }
+}
 
 resource "kubernetes_service_account" "oidc_discovery" {
   metadata {
@@ -321,7 +415,7 @@ resource "kubernetes_config_map" "oidc_discovery_config" {
         tos_accepted = true
       }
       workload_api {
-        socket_path = "/spiffe-workload-api/spire-agent.sock"
+        socket_path = "/run/spire/agent-sockets/spire-agent.sock"
         trust_domain = "megamart.com"
       }
       health_checks {
@@ -334,99 +428,10 @@ resource "kubernetes_config_map" "oidc_discovery_config" {
   }
 }
 
-# resource "kubernetes_deployment" "oidc_discovery" {
-#   depends_on = [null_resource.spire_trust_bundle_sync]
-#   metadata {
-#     name      = "spire-native-oidc-discovery"
-#     namespace = kubernetes_namespace.store_edge.metadata[0].name
-#   }
-# 
-#   spec {
-#     replicas = 1
-#     selector {
-#       match_labels = {
-#         app = "oidc-discovery"
-#       }
-#     }
-# 
-#     template {
-#       metadata {
-#         labels = {
-#           app = "oidc-discovery"
-#         }
-#       }
-# 
-#       spec {
-#         service_account_name = kubernetes_service_account.oidc_discovery.metadata[0].name
-#         container {
-#           name  = "oidc-discovery-provider"
-#           image = "ghcr.io/spiffe/oidc-discovery-provider:1.6.1"
-# 
-#           args = ["-config", "/run/spire/oidc/config/oidc-discovery-provider.conf"]
-# 
-#           port {
-#             container_port = 443
-#           }
-#           port {
-#             container_port = 8008
-#           }
-# 
-#           volume_mount {
-#             name       = "spiffe-workload-api"
-#             mount_path = "/spiffe-workload-api"
-#             read_only  = true
-#           }
-# 
-#           volume_mount {
-#             name       = "config"
-#             mount_path = "/run/spire/oidc/config"
-#             read_only  = true
-#           }
-#         }
-# 
-#         volume {
-#           name = "spiffe-workload-api"
-#           host_path {
-#             path = "/run/spire/agent-sockets"
-#             type = "Directory"
-#           }
-#         }
-# 
-#         volume {
-#           name = "config"
-#           config_map {
-#             name = kubernetes_config_map.oidc_discovery_config.metadata[0].name
-#           }
-#         }
-#       }
-#     }
-#   }
-# }
+# OIDC discovery provider removed from edge per requirement.
 
-resource "kubernetes_service" "oidc_discovery" {
-  metadata {
-    name      = "spire-edge-spiffe-oidc-discovery-provider"
-    namespace = kubernetes_namespace.store_edge.metadata[0].name
-  }
+# OIDC discovery provider removed from edge per requirement.
 
-  spec {
-    selector = {
-      app = "oidc-discovery"
-    }
-
-    port {
-      name        = "https"
-      port        = 443
-      target_port = 443
-    }
-
-    port {
-      name        = "health"
-      port        = 8008
-      target_port = 8008
-    }
-  }
-}
 
 # NOTE: Manual SPIRE registrations are removed.
 # The SPIRE Kubernetes Registrar now automatically handles workload registration.
@@ -857,55 +862,41 @@ resource "kubernetes_manifest" "github_egress" {
 }
 #
 ## 1. Allow both SVID and Plain-Text for Keycloak namespace (to support Browser login)
-#resource "kubernetes_manifest" "keycloak_peer_auth" {
-#  manifest = {
-#    apiVersion = "security.istio.io/v1beta1"
-#    kind       = "PeerAuthentication"
-#    metadata = {
-#      name      = "keycloak-permissive"
-#      namespace = kubernetes_namespace.store_edge.metadata[0].name
-#    }
-#    spec = {
-#      mtls = {
-#        mode = "PERMISSIVE"
-#      }
-#    }
-#  }
-#}
+resource "kubernetes_manifest" "keycloak_peer_auth" {
+  manifest = {
+    apiVersion = "security.istio.io/v1beta1"
+    kind       = "PeerAuthentication"
+    metadata = {
+      name      = "keycloak-permissive"
+      namespace = kubernetes_namespace.store_edge.metadata[0].name
+    }
+    spec = {
+      selector = { matchLabels = { app = "keycloak" } }
+      mtls = { mode = "PERMISSIVE" }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "webapp_peer_auth" {
+  manifest = {
+    apiVersion = "security.istio.io/v1beta1"
+    kind       = "PeerAuthentication"
+    metadata = {
+      name      = "webapp-permissive"
+      namespace = kubernetes_namespace.store_apps.metadata[0].name
+    }
+    spec = {
+      selector = { matchLabels = { app = "webapp-frontend" } }
+      mtls = { mode = "PERMISSIVE" }
+    }
+  }
+}
 #
 ## 2. Enforce High-Clearance Identity for Token Exchange
 ## resource "kubernetes_manifest" "keycloak_authz" {
 ##   manifest = {
 ##     apiVersion = "security.istio.io/v1beta1"
 ##     kind       = "AuthorizationPolicy"
-##     metadata = {
-##       name      = "keycloak-split-path"
-##       namespace = kubernetes_namespace.store_edge.metadata[0].name
-##     }
-##     spec = {
-##       selector = {
-##         matchLabels = {
-##           "app.kubernetes.io/name" = "keycloak"
-##         }
-##       }
-##       # RULE 1: Allow Human Login (No SVID required for browser redirects)
-##       rules = [
-##         {
-##           to = [{
-##             operation = {
-##               paths = [
-##                 "/realms/*/protocol/*",
-##                 "/realms/*/.well-known/*",
-##                 "/resources/*"
-##               ]
-##             }
-##           }]
-##         },
-##         # RULE 2: STRICT Identity for SVID-based Token Exchange
-##         # Unified trust domain: SPIRE issues all certs as megamart.com
-##         # NOTE: Istio auto-prepends spiffe:// — principal must NOT include it
-##         {
-##           from = [{
 ##             source = {
 ##               principals = ["spiffe://megamart.com/ns/${kubernetes_namespace.store_apps.metadata[0].name}/sa/${kubernetes_service_account.ai_agent.metadata[0].name}"]
 ##             }
