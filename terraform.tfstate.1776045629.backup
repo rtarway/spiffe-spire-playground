@@ -1,0 +1,3983 @@
+{
+  "version": 4,
+  "terraform_version": "1.5.7",
+  "serial": 252,
+  "lineage": "2f7a972e-73fa-066b-d1d7-b8f33693ef04",
+  "outputs": {},
+  "resources": [
+    {
+      "mode": "data",
+      "type": "kubernetes_config_map",
+      "name": "spire_cloud_bundle",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "binary_data": {},
+            "data": {
+              "bundle.crt": "-----BEGIN CERTIFICATE-----\nMIIDWDCCAkCgAwIBAgIQHOdCdUVq7BTt1dHAE13nijANBgkqhkiG9w0BAQsFADA1\nMQswCQYDVQQGEwJOTDEQMA4GA1UEChMHRXhhbXBsZTEUMBIGA1UEAxMLZXhhbXBs\nZS5vcmcwHhcNMjYwNDEyMjIzOTE2WhcNMjYwNDEzMjIzOTI2WjA1MQswCQYDVQQG\nEwJOTDEQMA4GA1UEChMHRXhhbXBsZTEUMBIGA1UEAxMLZXhhbXBsZS5vcmcwggEi\nMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC21S/oqpo5YDrIesNEgpi2Gtk3\nTwrEpU7TyeQRca1jQ6lXBp081XSQltL42sIzVYeb52VY5+bvm57iro2uppS59xfo\n1OI4lF5xfCuG4hm3j28Ed4p/8ZKEETSPMd7mTv9IFWLIxvmW+7/YBKoYtiuVV6e1\nl362MlPWtmsp4wa4EDabiYsg2GGDQvL3zUJQcHxUqUF1ly1VQN8qSnryQVy/KEcT\n7N8jqUXj2bqbh/+aMi/OGuBrmMMGHVjb/Xv+L3biO4SB5ZaFcA9hT2pEWnH+CT/z\nmxZVKUGSlDiBODGj8BV4fls9Do8VZSozhPSENOAmLCAYzc6eFsCrvLdykodzAgMB\nAAGjZDBiMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQW\nBBQfqGpSXxLEp5bUV4Cm/DcososfXjAgBgNVHREEGTAXhhVzcGlmZmU6Ly9tZWdh\nbWFydC5jb20wDQYJKoZIhvcNAQELBQADggEBAGEYl7CHiDvyhtgc3PUTnT0UrszK\nce1P3XL2S/EFXWa0/U7Z5VI7twVE844L1aFQtHJVvBZB5xHYj2kO9QYsxbjITnRI\nDwc9X5hPTJ661c+5aYJZYuPqXAx73u00uD3fK5gCvQxaX+kOcyTiDWYeZTqCtDc0\nYxTI93Gsn9VMv4Nr2465jlxHuofGYLsdpYl4AfwZhx99dJlAUcbtFiYyR1lwSY5x\nyxjn6p48BTljvRB0PtkPHijykLpqBV80rKg9N3dBT0LUWzE0nRNbIa0u/DClhwJv\nLXX6m+QuXqL6f42xpgyyBMVH5kXTuEVZMVkcFCnOgwXFPBzn86NdT8jBYPE=\n-----END CERTIFICATE-----\n"
+            },
+            "id": "megamart-cloud-tier/spire-bundle",
+            "immutable": false,
+            "metadata": [
+              {
+                "annotations": {
+                  "meta.helm.sh/release-name": "spire-cloud",
+                  "meta.helm.sh/release-namespace": "megamart-cloud-tier"
+                },
+                "generation": 0,
+                "labels": {
+                  "app.kubernetes.io/managed-by": "Helm"
+                },
+                "name": "spire-bundle",
+                "namespace": "megamart-cloud-tier",
+                "resource_version": "5336",
+                "uid": "db11f217-69d8-4e53-b9f4-4c4428b37369"
+              }
+            ]
+          },
+          "sensitive_attributes": []
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "helm_release",
+      "name": "istio_base",
+      "provider": "provider[\"registry.terraform.io/hashicorp/helm\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "atomic": false,
+            "chart": "base",
+            "cleanup_on_fail": false,
+            "create_namespace": false,
+            "dependency_update": false,
+            "description": null,
+            "devel": null,
+            "disable_crd_hooks": false,
+            "disable_openapi_validation": false,
+            "disable_webhooks": false,
+            "force_update": false,
+            "id": "istio-base",
+            "keyring": null,
+            "lint": false,
+            "manifest": null,
+            "max_history": 0,
+            "metadata": [
+              {
+                "app_version": "1.29.1",
+                "chart": "base",
+                "first_deployed": 1776033506,
+                "last_deployed": 1776033506,
+                "name": "istio-base",
+                "namespace": "istio-system",
+                "notes": "Istio base successfully installed!\n\nTo learn more about the release, try:\n  $ helm status istio-base -n istio-system\n  $ helm get all istio-base -n istio-system\n",
+                "revision": 1,
+                "values": "{}",
+                "version": "1.29.1"
+              }
+            ],
+            "name": "istio-base",
+            "namespace": "istio-system",
+            "pass_credentials": false,
+            "postrender": [],
+            "recreate_pods": false,
+            "render_subchart_notes": true,
+            "replace": false,
+            "repository": "https://istio-release.storage.googleapis.com/charts",
+            "repository_ca_file": null,
+            "repository_cert_file": null,
+            "repository_key_file": null,
+            "repository_password": null,
+            "repository_username": null,
+            "reset_values": false,
+            "reuse_values": false,
+            "set": [],
+            "set_list": [],
+            "set_sensitive": [],
+            "skip_crds": false,
+            "status": "deployed",
+            "timeout": 300,
+            "upgrade_install": null,
+            "values": null,
+            "verify": false,
+            "version": "1.29.1",
+            "wait": true,
+            "wait_for_jobs": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "kubernetes_namespace.istio_system"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "helm_release",
+      "name": "istiod",
+      "provider": "provider[\"registry.terraform.io/hashicorp/helm\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "atomic": false,
+            "chart": "istiod",
+            "cleanup_on_fail": false,
+            "create_namespace": false,
+            "dependency_update": false,
+            "description": null,
+            "devel": null,
+            "disable_crd_hooks": false,
+            "disable_openapi_validation": false,
+            "disable_webhooks": false,
+            "force_update": false,
+            "id": "istiod",
+            "keyring": null,
+            "lint": false,
+            "manifest": null,
+            "max_history": 0,
+            "metadata": [
+              {
+                "app_version": "1.29.1",
+                "chart": "istiod",
+                "first_deployed": 1776033528,
+                "last_deployed": 1776033528,
+                "name": "istiod",
+                "namespace": "istio-system",
+                "notes": "\"istiod\" successfully installed!\n\nTo learn more about the release, try:\n  $ helm status istiod -n istio-system\n  $ helm get all istiod -n istio-system\n\nNext steps:\n  * Deploy a Gateway: https://istio.io/latest/docs/setup/additional-setup/gateway/\n  * Try out our tasks to get started on common configurations:\n    * https://istio.io/latest/docs/tasks/traffic-management\n    * https://istio.io/latest/docs/tasks/security/\n    * https://istio.io/latest/docs/tasks/policy-enforcement/\n  * Review the list of actively supported releases, CVE publications and our hardening guide:\n    * https://istio.io/latest/docs/releases/supported-releases/\n    * https://istio.io/latest/news/security/\n    * https://istio.io/latest/docs/ops/best-practices/security/\n\nFor further documentation see https://istio.io website",
+                "revision": 1,
+                "values": "{\"global\":{\"hub\":\"docker.io/istio\",\"meshID\":\"megamart.com\",\"multiCluster\":{\"clusterName\":\"demo-cluster\"},\"trustDomain\":\"megamart.com\"},\"meshConfig\":{\"defaultConfig\":{\"proxyMetadata\":{\"SPIFFE_ENDPOINT_SOCKET\":\"unix:///run/spire/agent-sockets/spire-agent.sock\"}},\"extensionProviders\":[{\"envoyExtAuthzHttp\":{\"includeRequestHeadersInCheck\":[\"x-forwarded-client-cert\",\"authorization\"],\"pathPrefix\":\"/v1/data/authz/allow\",\"port\":9191,\"service\":\"127.0.0.1\"},\"name\":\"opa-ext-authz\"}],\"trustDomain\":\"megamart.com\"},\"sidecarInjectorWebhook\":{\"defaultTemplatesOverride\":\"sidecar,spire\",\"templates\":{\"spire\":\"spec:\\n  containers:\\n    - name: istio-proxy\\n      volumeMounts:\\n        - name: spire-agent-socket\\n          mountPath: /run/spire/agent-sockets\\n          readOnly: false\\n  volumes:\\n    - name: spire-agent-socket\\n      hostPath:\\n        path: /run/spire/agent-sockets\\n        type: Directory\\n\"}}}",
+                "version": "1.29.1"
+              }
+            ],
+            "name": "istiod",
+            "namespace": "istio-system",
+            "pass_credentials": false,
+            "postrender": [],
+            "recreate_pods": false,
+            "render_subchart_notes": true,
+            "replace": false,
+            "repository": "https://istio-release.storage.googleapis.com/charts",
+            "repository_ca_file": null,
+            "repository_cert_file": null,
+            "repository_key_file": null,
+            "repository_password": null,
+            "repository_username": null,
+            "reset_values": false,
+            "reuse_values": false,
+            "set": [],
+            "set_list": [],
+            "set_sensitive": [],
+            "skip_crds": false,
+            "status": "deployed",
+            "timeout": 300,
+            "upgrade_install": null,
+            "values": [
+              "global:\n  hub: \"docker.io/istio\"\n  trustDomain: \"megamart.com\"\n  meshID: \"megamart.com\"\n  multiCluster:\n    clusterName: \"demo-cluster\"\n\nmeshConfig:\n  trustDomain: \"megamart.com\"\n  defaultConfig:\n    proxyMetadata:\n      # Tell every istio-agent to use the SPIRE Workload API for its cert.\n      # This path is mounted into every proxy by the \"spire\" template below.\n      SPIFFE_ENDPOINT_SOCKET: \"unix:///run/spire/agent-sockets/spire-agent.sock\"\n  extensionProviders:\n    - name: \"opa-ext-authz\"\n      envoyExtAuthzHttp:\n        service: \"127.0.0.1\"\n        port: 9191\n        pathPrefix: \"/v1/data/authz/allow\"\n        includeRequestHeadersInCheck:\n          - \"x-forwarded-client-cert\"\n          - \"authorization\"\n\nsidecarInjectorWebhook:\n  # Apply \"sidecar\" + \"spire\" templates to every injected pod.\n  # This means ALL workloads in labelled namespaces automatically get\n  # the SPIRE socket mounted — no per-pod annotation required.\n  defaultTemplatesOverride: \"sidecar,spire\"\n  templates:\n    spire: |\n      spec:\n        containers:\n          - name: istio-proxy\n            volumeMounts:\n              - name: spire-agent-socket\n                mountPath: /run/spire/agent-sockets\n                readOnly: false\n        volumes:\n          - name: spire-agent-socket\n            hostPath:\n              path: /run/spire/agent-sockets\n              type: Directory\n"
+            ],
+            "verify": false,
+            "version": "1.29.1",
+            "wait": true,
+            "wait_for_jobs": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "helm_release.istio_base",
+            "kubernetes_namespace.istio_system"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "helm_release",
+      "name": "keycloak",
+      "provider": "provider[\"registry.terraform.io/hashicorp/helm\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "atomic": false,
+            "chart": "keycloak",
+            "cleanup_on_fail": false,
+            "create_namespace": false,
+            "dependency_update": false,
+            "description": null,
+            "devel": null,
+            "disable_crd_hooks": false,
+            "disable_openapi_validation": false,
+            "disable_webhooks": false,
+            "force_update": false,
+            "id": "keycloak",
+            "keyring": null,
+            "lint": false,
+            "manifest": null,
+            "max_history": 0,
+            "metadata": [
+              {
+                "app_version": "24.0.5",
+                "chart": "keycloak",
+                "first_deployed": 1776033519,
+                "last_deployed": 1776033519,
+                "name": "keycloak",
+                "namespace": "megamart-store-edge",
+                "notes": "CHART NAME: postgresql\nCHART VERSION: 15.5.5\nAPP VERSION: 16.3.0\n\n** Please be patient while the chart is being deployed **\n\nPostgreSQL can be accessed via port 5432 on the following DNS names from within your cluster:\n\n    keycloak-postgresql.megamart-store-edge.svc.cluster.local - Read/Write connection\n\nTo get the password for \"postgres\" run:\n\n    export POSTGRES_ADMIN_PASSWORD=$(kubectl get secret --namespace megamart-store-edge keycloak-postgresql -o jsonpath=\"{.data.postgres-password}\" | base64 -d)\n\nTo get the password for \"bn_keycloak\" run:\n\n    export POSTGRES_PASSWORD=$(kubectl get secret --namespace megamart-store-edge keycloak-postgresql -o jsonpath=\"{.data.password}\" | base64 -d)\n\nTo connect to your database run the following command:\n\n    kubectl run keycloak-postgresql-client --rm --tty -i --restart='Never' --namespace megamart-store-edge --image docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r14 --env=\"PGPASSWORD=$POSTGRES_PASSWORD\" \\\n      --command -- psql --host keycloak-postgresql -U bn_keycloak -d bitnami_keycloak -p 5432\n\n    \u003e NOTE: If you access the container using bash, make sure that you execute \"/opt/bitnami/scripts/postgresql/entrypoint.sh /bin/bash\" in order to avoid the error \"psql: local user with ID 1001} does not exist\"\n\nTo connect to your database from outside the cluster execute the following commands:\n\n    kubectl port-forward --namespace megamart-store-edge svc/keycloak-postgresql 5432:5432 \u0026\n    PGPASSWORD=\"$POSTGRES_PASSWORD\" psql --host 127.0.0.1 -U bn_keycloak -d bitnami_keycloak -p 5432\n\nWARNING: The configured password will be ignored on new installation in case when previous PostgreSQL release was deleted through the helm command. In that case, old PVC will have an old password, and setting it through helm won't take effect. Deleting persistent volumes (PVs) will solve the issue.\n\nWARNING: There are \"resources\" sections in the chart not set. Using \"resourcesPreset\" is not recommended for production. For production installations, please set the following values according to your workload needs:\n  - primary.resources\n  - readReplicas.resources\n+info https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n\n⚠ SECURITY WARNING: Original containers have been substituted. This Helm chart was designed, tested, and validated on multiple platforms using a specific set of Bitnami and Tanzu Application Catalog containers. Substituting other containers is likely to cause degraded security and performance, broken chart features, and missing environment variables.\n\nSubstituted images detected:\n  - docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r14\nCHART NAME: keycloak\nCHART VERSION: 21.4.2\nAPP VERSION: 24.0.5\n\n** Please be patient while the chart is being deployed **\n\nKeycloak can be accessed through the following DNS name from within your cluster:\n\n    keycloak.megamart-store-edge.svc.cluster.local (port 80)\n\nTo access Keycloak from outside the cluster execute the following commands:\n\n1. Get the Keycloak URL by running these commands:\n\n    export HTTP_NODE_PORT=$(kubectl get --namespace megamart-store-edge -o jsonpath=\"{.spec.ports[?(@.name=='http')].nodePort}\" services keycloak)\n    export NODE_IP=$(kubectl get nodes --namespace megamart-store-edge -o jsonpath=\"{.items[0].status.addresses[0].address}\")\n\n    echo \"http://${NODE_IP}:${HTTP_NODE_PORT}/\"\n\n2. Access Keycloak using the obtained URL.\n3. Access the Administration Console using the following credentials:\n\n  echo Username: admin\n  echo Password: $(kubectl get secret --namespace megamart-store-edge keycloak -o jsonpath=\"{.data.admin-password}\" | base64 -d)\n\nWARNING: There are \"resources\" sections in the chart not set. Using \"resourcesPreset\" is not recommended for production. For production installations, please set the following values according to your workload needs:\n  - resources\n+info https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n\n⚠ SECURITY WARNING: Original containers have been substituted. This Helm chart was designed, tested, and validated on multiple platforms using a specific set of Bitnami and Tanzu Application Catalog containers. Substituting other containers is likely to cause degraded security and performance, broken chart features, and missing environment variables.\n\nSubstituted images detected:\n  - docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r0",
+                "revision": 1,
+                "values": "{\"auth\":{\"adminPassword\":\"megamart_secure_admin_pass\",\"adminUser\":\"admin\"},\"extraEnvVars\":[{\"name\":\"KC_FEATURES\",\"value\":\"token-exchange,admin-fine-grained-authz\"}],\"image\":{\"registry\":\"docker.io\",\"repository\":\"bitnamilegacy/keycloak\"},\"postgresql\":{\"auth\":{\"password\":\"megamart_secure_db_pass\"},\"image\":{\"registry\":\"docker.io\",\"repository\":\"bitnamilegacy/postgresql\"}},\"service\":{\"nodePorts\":{\"http\":30080},\"type\":\"NodePort\"}}",
+                "version": "21.4.2"
+              }
+            ],
+            "name": "keycloak",
+            "namespace": "megamart-store-edge",
+            "pass_credentials": false,
+            "postrender": [],
+            "recreate_pods": false,
+            "render_subchart_notes": true,
+            "replace": false,
+            "repository": "https://charts.bitnami.com/bitnami",
+            "repository_ca_file": null,
+            "repository_cert_file": null,
+            "repository_key_file": null,
+            "repository_password": null,
+            "repository_username": null,
+            "reset_values": false,
+            "reuse_values": false,
+            "set": [
+              {
+                "name": "auth.adminPassword",
+                "type": "",
+                "value": "megamart_secure_admin_pass"
+              },
+              {
+                "name": "auth.adminUser",
+                "type": "",
+                "value": "admin"
+              },
+              {
+                "name": "extraEnvVars[0].name",
+                "type": "",
+                "value": "KC_FEATURES"
+              },
+              {
+                "name": "extraEnvVars[0].value",
+                "type": "",
+                "value": "token-exchange\\,admin-fine-grained-authz"
+              },
+              {
+                "name": "image.registry",
+                "type": "",
+                "value": "docker.io"
+              },
+              {
+                "name": "image.repository",
+                "type": "",
+                "value": "bitnamilegacy/keycloak"
+              },
+              {
+                "name": "postgresql.auth.password",
+                "type": "",
+                "value": "megamart_secure_db_pass"
+              },
+              {
+                "name": "postgresql.image.registry",
+                "type": "",
+                "value": "docker.io"
+              },
+              {
+                "name": "postgresql.image.repository",
+                "type": "",
+                "value": "bitnamilegacy/postgresql"
+              },
+              {
+                "name": "service.nodePorts.http",
+                "type": "",
+                "value": "30080"
+              },
+              {
+                "name": "service.type",
+                "type": "",
+                "value": "NodePort"
+              }
+            ],
+            "set_list": [],
+            "set_sensitive": [],
+            "skip_crds": false,
+            "status": "deployed",
+            "timeout": 300,
+            "upgrade_install": null,
+            "values": null,
+            "verify": false,
+            "version": "21.4.2",
+            "wait": true,
+            "wait_for_jobs": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "helm_release",
+      "name": "spire_cloud",
+      "provider": "provider[\"registry.terraform.io/hashicorp/helm\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "atomic": false,
+            "chart": "spire",
+            "cleanup_on_fail": false,
+            "create_namespace": false,
+            "dependency_update": false,
+            "description": null,
+            "devel": null,
+            "disable_crd_hooks": false,
+            "disable_openapi_validation": false,
+            "disable_webhooks": false,
+            "force_update": false,
+            "id": "spire-cloud",
+            "keyring": null,
+            "lint": false,
+            "manifest": null,
+            "max_history": 0,
+            "metadata": [
+              {
+                "app_version": "1.6.1",
+                "chart": "spire",
+                "first_deployed": 1776033530,
+                "last_deployed": 1776033530,
+                "name": "spire-cloud",
+                "namespace": "megamart-cloud-tier",
+                "notes": "Installed spire-server…\n\n1. Get the currently registered SPIFFE entries from the server:\n\n  kubectl exec -n megamart-cloud-tier spire-cloud-server-0 -c spire-server -- \\\n    spire-server entry show\n\nInstalled spire…\n\nInstalled spire-agent…\n\nSPIFFE OIDC discovery provider installed…\n\nSPIFFE CSI Driver installed…\n",
+                "revision": 1,
+                "values": "{\"global\":{\"spire\":{\"trustDomain\":\"megamart.com\"}},\"spiffe-oidc-discovery-provider\":{\"config\":{\"acme\":{\"tosAccepted\":true}},\"enabled\":true},\"spire-agent\":{\"nodeAttestor\":{\"k8sPSAT\":{\"enabled\":true}},\"server\":{\"port\":8443}},\"spire-server\":{\"controllerManager\":{\"validatingWebhookConfiguration\":{\"upgradeHook\":{\"image\":{\"registry\":\"docker.io\",\"repository\":\"bitnami/kubectl\"}}}},\"nodeAttestor\":{\"k8sPSAT\":{\"enabled\":true}},\"service\":{\"port\":8443}}}",
+                "version": "0.6.2"
+              }
+            ],
+            "name": "spire-cloud",
+            "namespace": "megamart-cloud-tier",
+            "pass_credentials": false,
+            "postrender": [],
+            "recreate_pods": false,
+            "render_subchart_notes": true,
+            "replace": false,
+            "repository": "https://spiffe.github.io/helm-charts-hardened",
+            "repository_ca_file": null,
+            "repository_cert_file": null,
+            "repository_key_file": null,
+            "repository_password": null,
+            "repository_username": null,
+            "reset_values": false,
+            "reuse_values": false,
+            "set": [
+              {
+                "name": "global.spire.trustDomain",
+                "type": "",
+                "value": "megamart.com"
+              },
+              {
+                "name": "spiffe-oidc-discovery-provider.config.acme.tosAccepted",
+                "type": "",
+                "value": "true"
+              },
+              {
+                "name": "spiffe-oidc-discovery-provider.enabled",
+                "type": "",
+                "value": "true"
+              },
+              {
+                "name": "spire-agent.nodeAttestor.k8sPSAT.enabled",
+                "type": "",
+                "value": "true"
+              },
+              {
+                "name": "spire-agent.server.port",
+                "type": "",
+                "value": "8443"
+              },
+              {
+                "name": "spire-server.controllerManager.validatingWebhookConfiguration.upgradeHook.image.registry",
+                "type": "",
+                "value": "docker.io"
+              },
+              {
+                "name": "spire-server.controllerManager.validatingWebhookConfiguration.upgradeHook.image.repository",
+                "type": "",
+                "value": "bitnami/kubectl"
+              },
+              {
+                "name": "spire-server.nodeAttestor.k8sPSAT.enabled",
+                "type": "",
+                "value": "true"
+              },
+              {
+                "name": "spire-server.service.port",
+                "type": "",
+                "value": "8443"
+              }
+            ],
+            "set_list": [],
+            "set_sensitive": [],
+            "skip_crds": false,
+            "status": "deployed",
+            "timeout": 300,
+            "upgrade_install": null,
+            "values": null,
+            "verify": false,
+            "version": "0.6.2",
+            "wait": true,
+            "wait_for_jobs": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "helm_release.spire_crds",
+            "kubernetes_namespace.cloud_tier"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "helm_release",
+      "name": "spire_crds",
+      "provider": "provider[\"registry.terraform.io/hashicorp/helm\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "atomic": false,
+            "chart": "spire-crds",
+            "cleanup_on_fail": false,
+            "create_namespace": false,
+            "dependency_update": false,
+            "description": null,
+            "devel": null,
+            "disable_crd_hooks": false,
+            "disable_openapi_validation": false,
+            "disable_webhooks": false,
+            "force_update": false,
+            "id": "spire-crds",
+            "keyring": null,
+            "lint": false,
+            "manifest": null,
+            "max_history": 0,
+            "metadata": [
+              {
+                "app_version": "0.0.1",
+                "chart": "spire-crds",
+                "first_deployed": 1776033509,
+                "last_deployed": 1776033509,
+                "name": "spire-crds",
+                "namespace": "megamart-cloud-tier",
+                "notes": "",
+                "revision": 1,
+                "values": "{}",
+                "version": "0.5.0"
+              }
+            ],
+            "name": "spire-crds",
+            "namespace": "megamart-cloud-tier",
+            "pass_credentials": false,
+            "postrender": [],
+            "recreate_pods": false,
+            "render_subchart_notes": true,
+            "replace": false,
+            "repository": "https://spiffe.github.io/helm-charts-hardened",
+            "repository_ca_file": null,
+            "repository_cert_file": null,
+            "repository_key_file": null,
+            "repository_password": null,
+            "repository_username": null,
+            "reset_values": false,
+            "reuse_values": false,
+            "set": [],
+            "set_list": [],
+            "set_sensitive": [],
+            "skip_crds": false,
+            "status": "deployed",
+            "timeout": 300,
+            "upgrade_install": null,
+            "values": null,
+            "verify": false,
+            "version": "0.5.0",
+            "wait": true,
+            "wait_for_jobs": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "kubernetes_namespace.cloud_tier"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "helm_release",
+      "name": "spire_edge",
+      "provider": "provider[\"registry.terraform.io/hashicorp/helm\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "atomic": false,
+            "chart": "spire",
+            "cleanup_on_fail": false,
+            "create_namespace": false,
+            "dependency_update": false,
+            "description": null,
+            "devel": null,
+            "disable_crd_hooks": false,
+            "disable_openapi_validation": false,
+            "disable_webhooks": false,
+            "force_update": false,
+            "id": "spire-edge",
+            "keyring": null,
+            "lint": false,
+            "manifest": null,
+            "max_history": 0,
+            "metadata": [
+              {
+                "app_version": "1.6.1",
+                "chart": "spire",
+                "first_deployed": 1776033714,
+                "last_deployed": 1776043650,
+                "name": "spire-edge",
+                "namespace": "megamart-store-edge",
+                "notes": "Installed spire…\n\nInstalled spire-server…\n\n1. Get the currently registered SPIFFE entries from the server:\n\n  kubectl exec -n megamart-store-edge spire-edge-server-0 -c spire-server -- \\\n    spire-server entry show\n\nInstalled spire-agent…\n",
+                "revision": 4,
+                "values": "{\"global\":{\"spire\":{\"clusterName\":\"megamart-cluster\",\"trustDomain\":\"megamart.com\"}},\"spiffe-csi-driver\":{\"config\":{\"agentSocketPath\":\"/run/spire/agent-sockets/spire-agent.sock\"},\"enabled\":false},\"spiffe-oidc-discovery-provider\":{\"enabled\":false},\"spire-agent\":{\"config\":{\"WorkloadAPI\":{\"socket_allow_all\":true}},\"healthChecks\":{\"port\":9981},\"nodeAttestor\":{\"k8sPSAT\":{\"enabled\":true}},\"socketPath\":\"/run/spire/agent-sockets/spire-agent.sock\"},\"spire-server\":{\"controllerManager\":{\"validatingWebhookConfiguration\":{\"upgradeHook\":{\"image\":{\"registry\":\"docker.io\",\"repository\":\"bitnami/kubectl\"}}}},\"notifier\":{\"k8sbundle\":{\"namespace\":\"megamart-store-edge\"}},\"upstreamAuthority\":{\"spire\":{\"config\":{\"rootCas\":\"-----BEGIN CERTIFICATE-----\\nMIIDWDCCAkCgAwIBAgIQHOdCdUVq7BTt1dHAE13nijANBgkqhkiG9w0BAQsFADA1\\nMQswCQYDVQQGEwJOTDEQMA4GA1UEChMHRXhhbXBsZTEUMBIGA1UEAxMLZXhhbXBs\\nZS5vcmcwHhcNMjYwNDEyMjIzOTE2WhcNMjYwNDEzMjIzOTI2WjA1MQswCQYDVQQG\\nEwJOTDEQMA4GA1UEChMHRXhhbXBsZTEUMBIGA1UEAxMLZXhhbXBsZS5vcmcwggEi\\nMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC21S/oqpo5YDrIesNEgpi2Gtk3\\nTwrEpU7TyeQRca1jQ6lXBp081XSQltL42sIzVYeb52VY5+bvm57iro2uppS59xfo\\n1OI4lF5xfCuG4hm3j28Ed4p/8ZKEETSPMd7mTv9IFWLIxvmW+7/YBKoYtiuVV6e1\\nl362MlPWtmsp4wa4EDabiYsg2GGDQvL3zUJQcHxUqUF1ly1VQN8qSnryQVy/KEcT\\n7N8jqUXj2bqbh/+aMi/OGuBrmMMGHVjb/Xv+L3biO4SB5ZaFcA9hT2pEWnH+CT/z\\nmxZVKUGSlDiBODGj8BV4fls9Do8VZSozhPSENOAmLCAYzc6eFsCrvLdykodzAgMB\\nAAGjZDBiMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQW\\nBBQfqGpSXxLEp5bUV4Cm/DcososfXjAgBgNVHREEGTAXhhVzcGlmZmU6Ly9tZWdh\\nbWFydC5jb20wDQYJKoZIhvcNAQELBQADggEBAGEYl7CHiDvyhtgc3PUTnT0UrszK\\nce1P3XL2S/EFXWa0/U7Z5VI7twVE844L1aFQtHJVvBZB5xHYj2kO9QYsxbjITnRI\\nDwc9X5hPTJ661c+5aYJZYuPqXAx73u00uD3fK5gCvQxaX+kOcyTiDWYeZTqCtDc0\\nYxTI93Gsn9VMv4Nr2465jlxHuofGYLsdpYl4AfwZhx99dJlAUcbtFiYyR1lwSY5x\\nyxjn6p48BTljvRB0PtkPHijykLpqBV80rKg9N3dBT0LUWzE0nRNbIa0u/DClhwJv\\nLXX6m+QuXqL6f42xpgyyBMVH5kXTuEVZMVkcFCnOgwXFPBzn86NdT8jBYPE=\\n-----END CERTIFICATE-----\\n\",\"serverAddr\":\"spire-cloud-server.megamart-cloud-tier.svc.cluster.local\",\"serverPort\":8443},\"enabled\":true}}}}",
+                "version": "0.6.2"
+              }
+            ],
+            "name": "spire-edge",
+            "namespace": "megamart-store-edge",
+            "pass_credentials": false,
+            "postrender": [],
+            "recreate_pods": false,
+            "render_subchart_notes": true,
+            "replace": false,
+            "repository": "https://spiffe.github.io/helm-charts-hardened",
+            "repository_ca_file": null,
+            "repository_cert_file": null,
+            "repository_key_file": null,
+            "repository_password": null,
+            "repository_username": null,
+            "reset_values": false,
+            "reuse_values": false,
+            "set": [
+              {
+                "name": "global.spire.clusterName",
+                "type": "",
+                "value": "megamart-cluster"
+              },
+              {
+                "name": "global.spire.trustDomain",
+                "type": "",
+                "value": "megamart.com"
+              },
+              {
+                "name": "spiffe-csi-driver.config.agentSocketPath",
+                "type": "",
+                "value": "/run/spire/agent-sockets/spire-agent.sock"
+              },
+              {
+                "name": "spiffe-csi-driver.enabled",
+                "type": "",
+                "value": "false"
+              },
+              {
+                "name": "spiffe-oidc-discovery-provider.enabled",
+                "type": "",
+                "value": "false"
+              },
+              {
+                "name": "spire-agent.config.WorkloadAPI.socket_allow_all",
+                "type": "",
+                "value": "true"
+              },
+              {
+                "name": "spire-agent.healthChecks.port",
+                "type": "",
+                "value": "9981"
+              },
+              {
+                "name": "spire-agent.nodeAttestor.k8sPSAT.enabled",
+                "type": "",
+                "value": "true"
+              },
+              {
+                "name": "spire-agent.socketPath",
+                "type": "",
+                "value": "/run/spire/agent-sockets/spire-agent.sock"
+              },
+              {
+                "name": "spire-server.controllerManager.validatingWebhookConfiguration.upgradeHook.image.registry",
+                "type": "",
+                "value": "docker.io"
+              },
+              {
+                "name": "spire-server.controllerManager.validatingWebhookConfiguration.upgradeHook.image.repository",
+                "type": "",
+                "value": "bitnami/kubectl"
+              },
+              {
+                "name": "spire-server.notifier.k8sbundle.namespace",
+                "type": "",
+                "value": "megamart-store-edge"
+              },
+              {
+                "name": "spire-server.upstreamAuthority.spire.config.rootCas",
+                "type": "",
+                "value": "-----BEGIN CERTIFICATE-----\nMIIDWDCCAkCgAwIBAgIQHOdCdUVq7BTt1dHAE13nijANBgkqhkiG9w0BAQsFADA1\nMQswCQYDVQQGEwJOTDEQMA4GA1UEChMHRXhhbXBsZTEUMBIGA1UEAxMLZXhhbXBs\nZS5vcmcwHhcNMjYwNDEyMjIzOTE2WhcNMjYwNDEzMjIzOTI2WjA1MQswCQYDVQQG\nEwJOTDEQMA4GA1UEChMHRXhhbXBsZTEUMBIGA1UEAxMLZXhhbXBsZS5vcmcwggEi\nMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC21S/oqpo5YDrIesNEgpi2Gtk3\nTwrEpU7TyeQRca1jQ6lXBp081XSQltL42sIzVYeb52VY5+bvm57iro2uppS59xfo\n1OI4lF5xfCuG4hm3j28Ed4p/8ZKEETSPMd7mTv9IFWLIxvmW+7/YBKoYtiuVV6e1\nl362MlPWtmsp4wa4EDabiYsg2GGDQvL3zUJQcHxUqUF1ly1VQN8qSnryQVy/KEcT\n7N8jqUXj2bqbh/+aMi/OGuBrmMMGHVjb/Xv+L3biO4SB5ZaFcA9hT2pEWnH+CT/z\nmxZVKUGSlDiBODGj8BV4fls9Do8VZSozhPSENOAmLCAYzc6eFsCrvLdykodzAgMB\nAAGjZDBiMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQW\nBBQfqGpSXxLEp5bUV4Cm/DcososfXjAgBgNVHREEGTAXhhVzcGlmZmU6Ly9tZWdh\nbWFydC5jb20wDQYJKoZIhvcNAQELBQADggEBAGEYl7CHiDvyhtgc3PUTnT0UrszK\nce1P3XL2S/EFXWa0/U7Z5VI7twVE844L1aFQtHJVvBZB5xHYj2kO9QYsxbjITnRI\nDwc9X5hPTJ661c+5aYJZYuPqXAx73u00uD3fK5gCvQxaX+kOcyTiDWYeZTqCtDc0\nYxTI93Gsn9VMv4Nr2465jlxHuofGYLsdpYl4AfwZhx99dJlAUcbtFiYyR1lwSY5x\nyxjn6p48BTljvRB0PtkPHijykLpqBV80rKg9N3dBT0LUWzE0nRNbIa0u/DClhwJv\nLXX6m+QuXqL6f42xpgyyBMVH5kXTuEVZMVkcFCnOgwXFPBzn86NdT8jBYPE=\n-----END CERTIFICATE-----\n"
+              },
+              {
+                "name": "spire-server.upstreamAuthority.spire.config.serverAddr",
+                "type": "",
+                "value": "spire-cloud-server.megamart-cloud-tier.svc.cluster.local"
+              },
+              {
+                "name": "spire-server.upstreamAuthority.spire.config.serverPort",
+                "type": "",
+                "value": "8443"
+              },
+              {
+                "name": "spire-server.upstreamAuthority.spire.enabled",
+                "type": "",
+                "value": "true"
+              }
+            ],
+            "set_list": [],
+            "set_sensitive": [],
+            "skip_crds": false,
+            "status": "deployed",
+            "timeout": 300,
+            "upgrade_install": null,
+            "values": null,
+            "verify": false,
+            "version": "0.6.2",
+            "wait": true,
+            "wait_for_jobs": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "data.kubernetes_config_map.spire_cloud_bundle",
+            "helm_release.spire_cloud",
+            "helm_release.spire_crds",
+            "kubernetes_namespace.cloud_tier",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "keycloak_openid_client",
+      "name": "ai_agent",
+      "provider": "provider[\"registry.terraform.io/keycloak/keycloak\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "access_token_lifespan": "",
+            "access_type": "CONFIDENTIAL",
+            "admin_url": "",
+            "allow_refresh_token_in_standard_token_exchange": "",
+            "always_display_in_console": false,
+            "authentication_flow_binding_overrides": [],
+            "authorization": [],
+            "backchannel_logout_revoke_offline_sessions": false,
+            "backchannel_logout_session_required": true,
+            "backchannel_logout_url": "",
+            "base_url": "",
+            "client_authenticator_type": "client-secret",
+            "client_id": "ai-agent",
+            "client_offline_session_idle_timeout": "",
+            "client_offline_session_max_lifespan": "",
+            "client_secret": "ai-agent-secret",
+            "client_secret_regenerate_when_changed": null,
+            "client_secret_wo": null,
+            "client_secret_wo_version": null,
+            "client_session_idle_timeout": "",
+            "client_session_max_lifespan": "",
+            "consent_required": false,
+            "consent_screen_text": "",
+            "description": "",
+            "direct_access_grants_enabled": false,
+            "display_on_consent_screen": false,
+            "enabled": true,
+            "exclude_issuer_from_auth_response": null,
+            "exclude_session_state_from_auth_response": null,
+            "extra_config": {},
+            "frontchannel_logout_enabled": false,
+            "frontchannel_logout_url": "",
+            "full_scope_allowed": true,
+            "id": "0f0e7f91-1974-4a6c-9149-f015bf511a4f",
+            "implicit_flow_enabled": false,
+            "import": false,
+            "login_theme": "",
+            "name": "AI Agent Backend",
+            "oauth2_device_authorization_grant_enabled": false,
+            "oauth2_device_code_lifespan": "",
+            "oauth2_device_polling_interval": "",
+            "pkce_code_challenge_method": "",
+            "realm_id": "megamart-edge",
+            "require_dpop_bound_tokens": false,
+            "resource_server_id": null,
+            "root_url": "",
+            "service_account_user_id": "52a0ec5c-2ba4-44ae-b9e7-f9167b874e72",
+            "service_accounts_enabled": true,
+            "standard_flow_enabled": false,
+            "standard_token_exchange_enabled": false,
+            "use_refresh_tokens": true,
+            "use_refresh_tokens_client_credentials": false,
+            "valid_post_logout_redirect_uris": [],
+            "valid_redirect_uris": [],
+            "web_origins": []
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "helm_release.keycloak",
+            "keycloak_realm.megamart_edge",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "keycloak_openid_client",
+      "name": "associate_device",
+      "provider": "provider[\"registry.terraform.io/keycloak/keycloak\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "access_token_lifespan": "",
+            "access_type": "PUBLIC",
+            "admin_url": "",
+            "allow_refresh_token_in_standard_token_exchange": "",
+            "always_display_in_console": false,
+            "authentication_flow_binding_overrides": [],
+            "authorization": [],
+            "backchannel_logout_revoke_offline_sessions": false,
+            "backchannel_logout_session_required": true,
+            "backchannel_logout_url": "",
+            "base_url": "",
+            "client_authenticator_type": "client-secret",
+            "client_id": "webapp-client",
+            "client_offline_session_idle_timeout": "",
+            "client_offline_session_max_lifespan": "",
+            "client_secret": "",
+            "client_secret_regenerate_when_changed": null,
+            "client_secret_wo": null,
+            "client_secret_wo_version": null,
+            "client_session_idle_timeout": "",
+            "client_session_max_lifespan": "",
+            "consent_required": false,
+            "consent_screen_text": "",
+            "description": "",
+            "direct_access_grants_enabled": true,
+            "display_on_consent_screen": false,
+            "enabled": true,
+            "exclude_issuer_from_auth_response": null,
+            "exclude_session_state_from_auth_response": null,
+            "extra_config": {},
+            "frontchannel_logout_enabled": false,
+            "frontchannel_logout_url": "",
+            "full_scope_allowed": true,
+            "id": "c37302dc-b312-40a4-9c49-ab2559afec7b",
+            "implicit_flow_enabled": false,
+            "import": false,
+            "login_theme": "",
+            "name": "Store Associate Device WebApp",
+            "oauth2_device_authorization_grant_enabled": false,
+            "oauth2_device_code_lifespan": "",
+            "oauth2_device_polling_interval": "",
+            "pkce_code_challenge_method": "",
+            "realm_id": "megamart-edge",
+            "require_dpop_bound_tokens": false,
+            "resource_server_id": null,
+            "root_url": "",
+            "service_account_user_id": "",
+            "service_accounts_enabled": false,
+            "standard_flow_enabled": true,
+            "standard_token_exchange_enabled": false,
+            "use_refresh_tokens": true,
+            "use_refresh_tokens_client_credentials": false,
+            "valid_post_logout_redirect_uris": [],
+            "valid_redirect_uris": [
+              "http://localhost:30000/*"
+            ],
+            "web_origins": [
+              "*",
+              "http://localhost:30000"
+            ]
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "helm_release.keycloak",
+            "keycloak_realm.megamart_edge",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "keycloak_openid_client",
+      "name": "mcp_server",
+      "provider": "provider[\"registry.terraform.io/keycloak/keycloak\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "access_token_lifespan": "",
+            "access_type": "CONFIDENTIAL",
+            "admin_url": "",
+            "allow_refresh_token_in_standard_token_exchange": "",
+            "always_display_in_console": false,
+            "authentication_flow_binding_overrides": [],
+            "authorization": [],
+            "backchannel_logout_revoke_offline_sessions": false,
+            "backchannel_logout_session_required": true,
+            "backchannel_logout_url": "",
+            "base_url": "",
+            "client_authenticator_type": "client-secret",
+            "client_id": "mcp-server",
+            "client_offline_session_idle_timeout": "",
+            "client_offline_session_max_lifespan": "",
+            "client_secret": "9utEAdU1qMJecWgSxo3LzkxSZt0HurvL",
+            "client_secret_regenerate_when_changed": null,
+            "client_secret_wo": null,
+            "client_secret_wo_version": null,
+            "client_session_idle_timeout": "",
+            "client_session_max_lifespan": "",
+            "consent_required": false,
+            "consent_screen_text": "",
+            "description": "",
+            "direct_access_grants_enabled": false,
+            "display_on_consent_screen": false,
+            "enabled": true,
+            "exclude_issuer_from_auth_response": null,
+            "exclude_session_state_from_auth_response": null,
+            "extra_config": {},
+            "frontchannel_logout_enabled": false,
+            "frontchannel_logout_url": "",
+            "full_scope_allowed": false,
+            "id": "ca901d6a-ff2e-4eef-aadb-88b4a0dae02c",
+            "implicit_flow_enabled": false,
+            "import": false,
+            "login_theme": "",
+            "name": "MCP Server API",
+            "oauth2_device_authorization_grant_enabled": false,
+            "oauth2_device_code_lifespan": "",
+            "oauth2_device_polling_interval": "",
+            "pkce_code_challenge_method": "",
+            "realm_id": "megamart-edge",
+            "require_dpop_bound_tokens": false,
+            "resource_server_id": null,
+            "root_url": "",
+            "service_account_user_id": "05698422-8bfe-4aa3-8f2e-e63860c2b1ee",
+            "service_accounts_enabled": true,
+            "standard_flow_enabled": false,
+            "standard_token_exchange_enabled": false,
+            "use_refresh_tokens": true,
+            "use_refresh_tokens_client_credentials": false,
+            "valid_post_logout_redirect_uris": [],
+            "valid_redirect_uris": [],
+            "web_origins": []
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "helm_release.keycloak",
+            "keycloak_realm.megamart_edge",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "keycloak_openid_client_permissions",
+      "name": "mcp_server_perms",
+      "provider": "provider[\"registry.terraform.io/keycloak/keycloak\"]",
+      "instances": []
+    },
+    {
+      "mode": "managed",
+      "type": "keycloak_realm",
+      "name": "megamart_edge",
+      "provider": "provider[\"registry.terraform.io/keycloak/keycloak\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "access_code_lifespan": "1m0s",
+            "access_code_lifespan_login": "30m0s",
+            "access_code_lifespan_user_action": "5m0s",
+            "access_token_lifespan": "5m0s",
+            "access_token_lifespan_for_implicit_flow": "15m0s",
+            "account_theme": "",
+            "action_token_generated_by_admin_lifespan": "12h0m0s",
+            "action_token_generated_by_user_lifespan": "5m0s",
+            "admin_permissions_enabled": false,
+            "admin_theme": "",
+            "attributes": {},
+            "browser_flow": "browser",
+            "client_authentication_flow": "clients",
+            "client_session_idle_timeout": "0s",
+            "client_session_max_lifespan": "0s",
+            "default_default_client_scopes": [],
+            "default_optional_client_scopes": [],
+            "default_signature_algorithm": "",
+            "direct_grant_flow": "direct grant",
+            "display_name": "",
+            "display_name_html": "",
+            "docker_authentication_flow": "docker auth",
+            "duplicate_emails_allowed": false,
+            "edit_username_allowed": false,
+            "email_theme": "",
+            "enabled": true,
+            "first_broker_login_flow": "first broker login",
+            "id": "megamart-edge",
+            "internal_id": "megamart-edge",
+            "internationalization": [],
+            "login_theme": "",
+            "login_with_email_allowed": false,
+            "oauth2_device_code_lifespan": "10m0s",
+            "oauth2_device_polling_interval": 5,
+            "offline_session_idle_timeout": "720h0m0s",
+            "offline_session_max_lifespan": "1440h0m0s",
+            "offline_session_max_lifespan_enabled": false,
+            "organizations_enabled": false,
+            "otp_policy": [
+              {
+                "algorithm": "HmacSHA1",
+                "digits": 6,
+                "initial_counter": 0,
+                "look_ahead_window": 1,
+                "period": 30,
+                "type": "totp"
+              }
+            ],
+            "password_policy": "",
+            "realm": "megamart-edge",
+            "refresh_token_max_reuse": 0,
+            "registration_allowed": false,
+            "registration_email_as_username": false,
+            "registration_flow": "registration",
+            "remember_me": false,
+            "reset_credentials_flow": "reset credentials",
+            "reset_password_allowed": false,
+            "revoke_refresh_token": false,
+            "security_defenses": [],
+            "smtp_server": [],
+            "ssl_required": "external",
+            "sso_session_idle_timeout": "30m0s",
+            "sso_session_idle_timeout_remember_me": "0s",
+            "sso_session_max_lifespan": "10h0m0s",
+            "sso_session_max_lifespan_remember_me": "0s",
+            "terraform_deletion_protection": false,
+            "user_managed_access": false,
+            "verify_email": false,
+            "web_authn_passwordless_policy": [
+              {
+                "acceptable_aaguids": [],
+                "attestation_conveyance_preference": "not specified",
+                "authenticator_attachment": "not specified",
+                "avoid_same_authenticator_register": false,
+                "create_timeout": 0,
+                "extra_origins": [],
+                "relying_party_entity_name": "keycloak",
+                "relying_party_id": "",
+                "require_resident_key": "not specified",
+                "signature_algorithms": [
+                  "ES256"
+                ],
+                "user_verification_requirement": "not specified"
+              }
+            ],
+            "web_authn_policy": [
+              {
+                "acceptable_aaguids": [],
+                "attestation_conveyance_preference": "not specified",
+                "authenticator_attachment": "not specified",
+                "avoid_same_authenticator_register": false,
+                "create_timeout": 0,
+                "extra_origins": [],
+                "relying_party_entity_name": "keycloak",
+                "relying_party_id": "",
+                "require_resident_key": "not specified",
+                "signature_algorithms": [
+                  "ES256"
+                ],
+                "user_verification_requirement": "not specified"
+              }
+            ]
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "helm_release.keycloak",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "keycloak_role",
+      "name": "mcp_executor",
+      "provider": "provider[\"registry.terraform.io/keycloak/keycloak\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "attributes": {},
+            "client_id": "",
+            "composite_roles": [],
+            "description": "",
+            "id": "5f8f39ae-b77b-4b9d-a0fe-9e6aba9eff87",
+            "import": false,
+            "name": "mcp-executor",
+            "realm_id": "megamart-edge"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "helm_release.keycloak",
+            "keycloak_realm.megamart_edge",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "keycloak_role",
+      "name": "store_associate",
+      "provider": "provider[\"registry.terraform.io/keycloak/keycloak\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "attributes": {},
+            "client_id": "",
+            "composite_roles": [],
+            "description": "",
+            "id": "1302d6f0-55e3-405a-ba31-3fc303063f8a",
+            "import": false,
+            "name": "store-associate",
+            "realm_id": "megamart-edge"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "helm_release.keycloak",
+            "keycloak_realm.megamart_edge",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "keycloak_user",
+      "name": "associate_user",
+      "provider": "provider[\"registry.terraform.io/keycloak/keycloak\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "attributes": {},
+            "email": "",
+            "email_verified": true,
+            "enabled": true,
+            "federated_identity": [],
+            "first_name": "",
+            "id": "29a3ebc9-ab96-471b-9bd6-f3162b240745",
+            "import": false,
+            "initial_password": [
+              {
+                "temporary": false,
+                "value": "associate"
+              }
+            ],
+            "last_name": "",
+            "realm_id": "megamart-edge",
+            "required_actions": [],
+            "username": "associate"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "helm_release.keycloak",
+            "keycloak_realm.megamart_edge",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "keycloak_user_roles",
+      "name": "ai_agent_sa_roles",
+      "provider": "provider[\"registry.terraform.io/keycloak/keycloak\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "exhaustive": true,
+            "id": "megamart-edge/52a0ec5c-2ba4-44ae-b9e7-f9167b874e72",
+            "realm_id": "megamart-edge",
+            "role_ids": [
+              "5f8f39ae-b77b-4b9d-a0fe-9e6aba9eff87"
+            ],
+            "user_id": "52a0ec5c-2ba4-44ae-b9e7-f9167b874e72"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "helm_release.keycloak",
+            "keycloak_openid_client.ai_agent",
+            "keycloak_realm.megamart_edge",
+            "keycloak_role.mcp_executor",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "keycloak_user_roles",
+      "name": "associate_user_roles",
+      "provider": "provider[\"registry.terraform.io/keycloak/keycloak\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "exhaustive": true,
+            "id": "megamart-edge/29a3ebc9-ab96-471b-9bd6-f3162b240745",
+            "realm_id": "megamart-edge",
+            "role_ids": [
+              "1302d6f0-55e3-405a-ba31-3fc303063f8a"
+            ],
+            "user_id": "29a3ebc9-ab96-471b-9bd6-f3162b240745"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "helm_release.keycloak",
+            "keycloak_realm.megamart_edge",
+            "keycloak_role.store_associate",
+            "keycloak_user.associate_user",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_config_map",
+      "name": "oidc_discovery_config",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "binary_data": {},
+            "data": {
+              "oidc-discovery-provider.conf": "log_level = \"info\"\ndomains = [\"spire-edge-spiffe-oidc-discovery-provider\", \"spire-edge-spiffe-oidc-discovery-provider.megamart-store-edge\", \"spire-edge-spiffe-oidc-discovery-provider.megamart-store-edge.svc.cluster.local\", \"localhost\"]\nacme {\n  cache_dir = \"/run/spire\"\n  tos_accepted = true\n}\nworkload_api {\n  socket_path = \"/spiffe-workload-api/spire-agent.sock\"\n  trust_domain = \"megamart.com\"\n}\nhealth_checks {\n  bind_addr = \":8008\"\n}\nserving {\n  bind_addr = \":443\"\n}\n"
+            },
+            "id": "megamart-store-edge/spire-edge-oidc-discovery-config",
+            "immutable": false,
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "spire-edge-oidc-discovery-config",
+                "namespace": "megamart-store-edge",
+                "resource_version": "5977",
+                "uid": "58e77a7c-5b33-4606-981e-97c13988c7da"
+              }
+            ]
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_config_map",
+      "name": "opa_config",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "binary_data": {},
+            "data": {
+              "config.yaml": "services:\n  github:\n    url: https://github.com\nbundles:\n  authz:\n    service: github\n    resource: rtarway/spiffe-spire-playground/archive/refs/heads/main.tar.gz\n    polling:\n      min_delay_seconds: 10\n      max_delay_seconds: 20\n"
+            },
+            "id": "megamart-store-apps/opa-config",
+            "immutable": false,
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "opa-config",
+                "namespace": "megamart-store-apps",
+                "resource_version": "5978",
+                "uid": "e14ccfa1-5dcf-4617-bdac-7a9507604c83"
+              }
+            ]
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "kubernetes_namespace.store_apps"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_config_map",
+      "name": "spire_cloud_bundle_bridge",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "binary_data": {},
+            "data": {
+              "bundle.crt": "-----BEGIN CERTIFICATE-----\nMIIDWDCCAkCgAwIBAgIQHOdCdUVq7BTt1dHAE13nijANBgkqhkiG9w0BAQsFADA1\nMQswCQYDVQQGEwJOTDEQMA4GA1UEChMHRXhhbXBsZTEUMBIGA1UEAxMLZXhhbXBs\nZS5vcmcwHhcNMjYwNDEyMjIzOTE2WhcNMjYwNDEzMjIzOTI2WjA1MQswCQYDVQQG\nEwJOTDEQMA4GA1UEChMHRXhhbXBsZTEUMBIGA1UEAxMLZXhhbXBsZS5vcmcwggEi\nMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC21S/oqpo5YDrIesNEgpi2Gtk3\nTwrEpU7TyeQRca1jQ6lXBp081XSQltL42sIzVYeb52VY5+bvm57iro2uppS59xfo\n1OI4lF5xfCuG4hm3j28Ed4p/8ZKEETSPMd7mTv9IFWLIxvmW+7/YBKoYtiuVV6e1\nl362MlPWtmsp4wa4EDabiYsg2GGDQvL3zUJQcHxUqUF1ly1VQN8qSnryQVy/KEcT\n7N8jqUXj2bqbh/+aMi/OGuBrmMMGHVjb/Xv+L3biO4SB5ZaFcA9hT2pEWnH+CT/z\nmxZVKUGSlDiBODGj8BV4fls9Do8VZSozhPSENOAmLCAYzc6eFsCrvLdykodzAgMB\nAAGjZDBiMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQW\nBBQfqGpSXxLEp5bUV4Cm/DcososfXjAgBgNVHREEGTAXhhVzcGlmZmU6Ly9tZWdh\nbWFydC5jb20wDQYJKoZIhvcNAQELBQADggEBAGEYl7CHiDvyhtgc3PUTnT0UrszK\nce1P3XL2S/EFXWa0/U7Z5VI7twVE844L1aFQtHJVvBZB5xHYj2kO9QYsxbjITnRI\nDwc9X5hPTJ661c+5aYJZYuPqXAx73u00uD3fK5gCvQxaX+kOcyTiDWYeZTqCtDc0\nYxTI93Gsn9VMv4Nr2465jlxHuofGYLsdpYl4AfwZhx99dJlAUcbtFiYyR1lwSY5x\nyxjn6p48BTljvRB0PtkPHijykLpqBV80rKg9N3dBT0LUWzE0nRNbIa0u/DClhwJv\nLXX6m+QuXqL6f42xpgyyBMVH5kXTuEVZMVkcFCnOgwXFPBzn86NdT8jBYPE=\n-----END CERTIFICATE-----\n"
+            },
+            "id": "megamart-store-edge/spire-bundle",
+            "immutable": false,
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "spire-bundle",
+                "namespace": "megamart-store-edge",
+                "resource_version": "28383",
+                "uid": "9cf71789-f014-4421-947f-5397df9ccaf5"
+              }
+            ]
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "data.kubernetes_config_map.spire_cloud_bundle",
+            "helm_release.spire_cloud",
+            "helm_release.spire_crds",
+            "kubernetes_namespace.cloud_tier",
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_deployment",
+      "name": "ai_agent",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "status": "tainted",
+          "schema_version": 1,
+          "attributes": {
+            "id": "megamart-store-apps/ai-agent",
+            "metadata": [
+              {
+                "annotations": null,
+                "generate_name": "",
+                "generation": 0,
+                "labels": {
+                  "app": "ai-agent"
+                },
+                "name": "ai-agent",
+                "namespace": "megamart-store-apps",
+                "resource_version": "",
+                "uid": ""
+              }
+            ],
+            "spec": [
+              {
+                "min_ready_seconds": 0,
+                "paused": false,
+                "progress_deadline_seconds": 600,
+                "replicas": "1",
+                "revision_history_limit": 10,
+                "selector": [
+                  {
+                    "match_expressions": [],
+                    "match_labels": {
+                      "app": "ai-agent"
+                    }
+                  }
+                ],
+                "strategy": [],
+                "template": [
+                  {
+                    "metadata": [
+                      {
+                        "annotations": null,
+                        "generate_name": "",
+                        "generation": 0,
+                        "labels": {
+                          "app": "ai-agent"
+                        },
+                        "name": "",
+                        "namespace": "",
+                        "resource_version": "",
+                        "uid": ""
+                      }
+                    ],
+                    "spec": [
+                      {
+                        "active_deadline_seconds": 0,
+                        "affinity": [],
+                        "automount_service_account_token": true,
+                        "container": [
+                          {
+                            "args": [
+                              "run",
+                              "--server",
+                              "--config-file=/config/config.yaml",
+                              "--log-level=debug"
+                            ],
+                            "command": null,
+                            "env": [],
+                            "env_from": [],
+                            "image": "openpolicyagent/opa:latest",
+                            "image_pull_policy": "",
+                            "lifecycle": [],
+                            "liveness_probe": [],
+                            "name": "opa",
+                            "port": [
+                              {
+                                "container_port": 9191,
+                                "host_ip": "",
+                                "host_port": 0,
+                                "name": "",
+                                "protocol": "TCP"
+                              }
+                            ],
+                            "readiness_probe": [],
+                            "resources": [],
+                            "security_context": [],
+                            "startup_probe": [],
+                            "stdin": false,
+                            "stdin_once": false,
+                            "termination_message_path": "/dev/termination-log",
+                            "termination_message_policy": "",
+                            "tty": false,
+                            "volume_device": [],
+                            "volume_mount": [
+                              {
+                                "mount_path": "/config",
+                                "mount_propagation": "None",
+                                "name": "opa-config",
+                                "read_only": true,
+                                "sub_path": "",
+                                "sub_path_expr": ""
+                              }
+                            ],
+                            "working_dir": ""
+                          },
+                          {
+                            "args": null,
+                            "command": null,
+                            "env": [
+                              {
+                                "name": "SPIFFE_ENDPOINT_SOCKET",
+                                "value": "unix:///run/spire/sockets/spire-agent.sock",
+                                "value_from": []
+                              }
+                            ],
+                            "env_from": [],
+                            "image": "ai-agent-backend:latest",
+                            "image_pull_policy": "Never",
+                            "lifecycle": [],
+                            "liveness_probe": [],
+                            "name": "ai-agent",
+                            "port": [
+                              {
+                                "container_port": 8000,
+                                "host_ip": "",
+                                "host_port": 0,
+                                "name": "",
+                                "protocol": "TCP"
+                              }
+                            ],
+                            "readiness_probe": [],
+                            "resources": [],
+                            "security_context": [],
+                            "startup_probe": [],
+                            "stdin": false,
+                            "stdin_once": false,
+                            "termination_message_path": "/dev/termination-log",
+                            "termination_message_policy": "",
+                            "tty": false,
+                            "volume_device": [],
+                            "volume_mount": [
+                              {
+                                "mount_path": "/run/spire/sockets",
+                                "mount_propagation": "None",
+                                "name": "spire-agent-socket",
+                                "read_only": true,
+                                "sub_path": "",
+                                "sub_path_expr": ""
+                              }
+                            ],
+                            "working_dir": ""
+                          }
+                        ],
+                        "dns_config": [],
+                        "dns_policy": "ClusterFirst",
+                        "enable_service_links": true,
+                        "host_aliases": [],
+                        "host_ipc": false,
+                        "host_network": false,
+                        "host_pid": false,
+                        "hostname": "",
+                        "image_pull_secrets": [],
+                        "init_container": [],
+                        "node_name": "",
+                        "node_selector": null,
+                        "os": [],
+                        "priority_class_name": "",
+                        "readiness_gate": [],
+                        "restart_policy": "Always",
+                        "runtime_class_name": "",
+                        "scheduler_name": "",
+                        "security_context": [],
+                        "service_account_name": "ai-agent",
+                        "share_process_namespace": false,
+                        "subdomain": "",
+                        "termination_grace_period_seconds": 30,
+                        "toleration": [],
+                        "topology_spread_constraint": [],
+                        "volume": [
+                          {
+                            "aws_elastic_block_store": [],
+                            "azure_disk": [],
+                            "azure_file": [],
+                            "ceph_fs": [],
+                            "cinder": [],
+                            "config_map": [],
+                            "csi": [],
+                            "downward_api": [],
+                            "empty_dir": [],
+                            "ephemeral": [],
+                            "fc": [],
+                            "flex_volume": [],
+                            "flocker": [],
+                            "gce_persistent_disk": [],
+                            "git_repo": [],
+                            "glusterfs": [],
+                            "host_path": [
+                              {
+                                "path": "/run/spire/edge-sockets",
+                                "type": "Directory"
+                              }
+                            ],
+                            "iscsi": [],
+                            "local": [],
+                            "name": "spire-agent-socket",
+                            "nfs": [],
+                            "persistent_volume_claim": [],
+                            "photon_persistent_disk": [],
+                            "projected": [],
+                            "quobyte": [],
+                            "rbd": [],
+                            "secret": [],
+                            "vsphere_volume": []
+                          },
+                          {
+                            "aws_elastic_block_store": [],
+                            "azure_disk": [],
+                            "azure_file": [],
+                            "ceph_fs": [],
+                            "cinder": [],
+                            "config_map": [
+                              {
+                                "default_mode": "0644",
+                                "items": [],
+                                "name": "opa-config",
+                                "optional": false
+                              }
+                            ],
+                            "csi": [],
+                            "downward_api": [],
+                            "empty_dir": [],
+                            "ephemeral": [],
+                            "fc": [],
+                            "flex_volume": [],
+                            "flocker": [],
+                            "gce_persistent_disk": [],
+                            "git_repo": [],
+                            "glusterfs": [],
+                            "host_path": [],
+                            "iscsi": [],
+                            "local": [],
+                            "name": "opa-config",
+                            "nfs": [],
+                            "persistent_volume_claim": [],
+                            "photon_persistent_disk": [],
+                            "projected": [],
+                            "quobyte": [],
+                            "rbd": [],
+                            "secret": [],
+                            "vsphere_volume": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "timeouts": null,
+            "wait_for_rollout": true
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6NjAwMDAwMDAwMDAwLCJ1cGRhdGUiOjYwMDAwMDAwMDAwMH0sInNjaGVtYV92ZXJzaW9uIjoiMSJ9",
+          "dependencies": [
+            "kubernetes_config_map.opa_config",
+            "kubernetes_namespace.store_apps",
+            "kubernetes_service_account.ai_agent"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_deployment",
+      "name": "mcp_server",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "status": "tainted",
+          "schema_version": 1,
+          "attributes": {
+            "id": "megamart-store-apps/mcp-server",
+            "metadata": [
+              {
+                "annotations": null,
+                "generate_name": "",
+                "generation": 0,
+                "labels": {
+                  "app": "mcp-server"
+                },
+                "name": "mcp-server",
+                "namespace": "megamart-store-apps",
+                "resource_version": "",
+                "uid": ""
+              }
+            ],
+            "spec": [
+              {
+                "min_ready_seconds": 0,
+                "paused": false,
+                "progress_deadline_seconds": 600,
+                "replicas": "1",
+                "revision_history_limit": 10,
+                "selector": [
+                  {
+                    "match_expressions": [],
+                    "match_labels": {
+                      "app": "mcp-server"
+                    }
+                  }
+                ],
+                "strategy": [],
+                "template": [
+                  {
+                    "metadata": [
+                      {
+                        "annotations": null,
+                        "generate_name": "",
+                        "generation": 0,
+                        "labels": {
+                          "app": "mcp-server"
+                        },
+                        "name": "",
+                        "namespace": "",
+                        "resource_version": "",
+                        "uid": ""
+                      }
+                    ],
+                    "spec": [
+                      {
+                        "active_deadline_seconds": 0,
+                        "affinity": [],
+                        "automount_service_account_token": true,
+                        "container": [
+                          {
+                            "args": [
+                              "run",
+                              "--server",
+                              "--config-file=/config/config.yaml",
+                              "--log-level=debug"
+                            ],
+                            "command": null,
+                            "env": [],
+                            "env_from": [],
+                            "image": "openpolicyagent/opa:latest",
+                            "image_pull_policy": "",
+                            "lifecycle": [],
+                            "liveness_probe": [],
+                            "name": "opa",
+                            "port": [
+                              {
+                                "container_port": 9191,
+                                "host_ip": "",
+                                "host_port": 0,
+                                "name": "",
+                                "protocol": "TCP"
+                              }
+                            ],
+                            "readiness_probe": [],
+                            "resources": [],
+                            "security_context": [],
+                            "startup_probe": [],
+                            "stdin": false,
+                            "stdin_once": false,
+                            "termination_message_path": "/dev/termination-log",
+                            "termination_message_policy": "",
+                            "tty": false,
+                            "volume_device": [],
+                            "volume_mount": [
+                              {
+                                "mount_path": "/config",
+                                "mount_propagation": "None",
+                                "name": "opa-config",
+                                "read_only": true,
+                                "sub_path": "",
+                                "sub_path_expr": ""
+                              }
+                            ],
+                            "working_dir": ""
+                          },
+                          {
+                            "args": null,
+                            "command": null,
+                            "env": [
+                              {
+                                "name": "KEYCLOAK_URL",
+                                "value": "http://keycloak.megamart-store-edge.svc.cluster.local:80/realms/megamart-edge",
+                                "value_from": []
+                              },
+                              {
+                                "name": "SPIFFE_ENDPOINT_SOCKET",
+                                "value": "unix:///run/spire/sockets/spire-agent.sock",
+                                "value_from": []
+                              }
+                            ],
+                            "env_from": [],
+                            "image": "mcp-server:latest",
+                            "image_pull_policy": "Never",
+                            "lifecycle": [],
+                            "liveness_probe": [],
+                            "name": "mcp-server",
+                            "port": [
+                              {
+                                "container_port": 8001,
+                                "host_ip": "",
+                                "host_port": 0,
+                                "name": "",
+                                "protocol": "TCP"
+                              }
+                            ],
+                            "readiness_probe": [],
+                            "resources": [],
+                            "security_context": [],
+                            "startup_probe": [],
+                            "stdin": false,
+                            "stdin_once": false,
+                            "termination_message_path": "/dev/termination-log",
+                            "termination_message_policy": "",
+                            "tty": false,
+                            "volume_device": [],
+                            "volume_mount": [
+                              {
+                                "mount_path": "/run/spire/sockets",
+                                "mount_propagation": "None",
+                                "name": "spire-agent-socket",
+                                "read_only": true,
+                                "sub_path": "",
+                                "sub_path_expr": ""
+                              }
+                            ],
+                            "working_dir": ""
+                          }
+                        ],
+                        "dns_config": [],
+                        "dns_policy": "ClusterFirst",
+                        "enable_service_links": true,
+                        "host_aliases": [],
+                        "host_ipc": false,
+                        "host_network": false,
+                        "host_pid": false,
+                        "hostname": "",
+                        "image_pull_secrets": [],
+                        "init_container": [],
+                        "node_name": "",
+                        "node_selector": null,
+                        "os": [],
+                        "priority_class_name": "",
+                        "readiness_gate": [],
+                        "restart_policy": "Always",
+                        "runtime_class_name": "",
+                        "scheduler_name": "",
+                        "security_context": [],
+                        "service_account_name": "mcp-server",
+                        "share_process_namespace": false,
+                        "subdomain": "",
+                        "termination_grace_period_seconds": 30,
+                        "toleration": [],
+                        "topology_spread_constraint": [],
+                        "volume": [
+                          {
+                            "aws_elastic_block_store": [],
+                            "azure_disk": [],
+                            "azure_file": [],
+                            "ceph_fs": [],
+                            "cinder": [],
+                            "config_map": [],
+                            "csi": [],
+                            "downward_api": [],
+                            "empty_dir": [],
+                            "ephemeral": [],
+                            "fc": [],
+                            "flex_volume": [],
+                            "flocker": [],
+                            "gce_persistent_disk": [],
+                            "git_repo": [],
+                            "glusterfs": [],
+                            "host_path": [
+                              {
+                                "path": "/run/spire/edge-sockets",
+                                "type": "Directory"
+                              }
+                            ],
+                            "iscsi": [],
+                            "local": [],
+                            "name": "spire-agent-socket",
+                            "nfs": [],
+                            "persistent_volume_claim": [],
+                            "photon_persistent_disk": [],
+                            "projected": [],
+                            "quobyte": [],
+                            "rbd": [],
+                            "secret": [],
+                            "vsphere_volume": []
+                          },
+                          {
+                            "aws_elastic_block_store": [],
+                            "azure_disk": [],
+                            "azure_file": [],
+                            "ceph_fs": [],
+                            "cinder": [],
+                            "config_map": [
+                              {
+                                "default_mode": "0644",
+                                "items": [],
+                                "name": "opa-config",
+                                "optional": false
+                              }
+                            ],
+                            "csi": [],
+                            "downward_api": [],
+                            "empty_dir": [],
+                            "ephemeral": [],
+                            "fc": [],
+                            "flex_volume": [],
+                            "flocker": [],
+                            "gce_persistent_disk": [],
+                            "git_repo": [],
+                            "glusterfs": [],
+                            "host_path": [],
+                            "iscsi": [],
+                            "local": [],
+                            "name": "opa-config",
+                            "nfs": [],
+                            "persistent_volume_claim": [],
+                            "photon_persistent_disk": [],
+                            "projected": [],
+                            "quobyte": [],
+                            "rbd": [],
+                            "secret": [],
+                            "vsphere_volume": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "timeouts": null,
+            "wait_for_rollout": true
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6NjAwMDAwMDAwMDAwLCJ1cGRhdGUiOjYwMDAwMDAwMDAwMH0sInNjaGVtYV92ZXJzaW9uIjoiMSJ9",
+          "dependencies": [
+            "kubernetes_config_map.opa_config",
+            "kubernetes_namespace.store_apps",
+            "kubernetes_service_account.mcp_server"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_deployment",
+      "name": "oidc_discovery",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "status": "tainted",
+          "schema_version": 1,
+          "attributes": {
+            "id": "megamart-store-edge/spire-native-oidc-discovery",
+            "metadata": [
+              {
+                "annotations": null,
+                "generate_name": "",
+                "generation": 0,
+                "labels": null,
+                "name": "spire-native-oidc-discovery",
+                "namespace": "megamart-store-edge",
+                "resource_version": "",
+                "uid": ""
+              }
+            ],
+            "spec": [
+              {
+                "min_ready_seconds": 0,
+                "paused": false,
+                "progress_deadline_seconds": 600,
+                "replicas": "1",
+                "revision_history_limit": 10,
+                "selector": [
+                  {
+                    "match_expressions": [],
+                    "match_labels": {
+                      "app": "oidc-discovery"
+                    }
+                  }
+                ],
+                "strategy": [],
+                "template": [
+                  {
+                    "metadata": [
+                      {
+                        "annotations": null,
+                        "generate_name": "",
+                        "generation": 0,
+                        "labels": {
+                          "app": "oidc-discovery"
+                        },
+                        "name": "",
+                        "namespace": "",
+                        "resource_version": "",
+                        "uid": ""
+                      }
+                    ],
+                    "spec": [
+                      {
+                        "active_deadline_seconds": 0,
+                        "affinity": [],
+                        "automount_service_account_token": true,
+                        "container": [
+                          {
+                            "args": [
+                              "-config",
+                              "/run/spire/oidc/config/oidc-discovery-provider.conf"
+                            ],
+                            "command": null,
+                            "env": [],
+                            "env_from": [],
+                            "image": "ghcr.io/spiffe/oidc-discovery-provider:1.6.1",
+                            "image_pull_policy": "",
+                            "lifecycle": [],
+                            "liveness_probe": [],
+                            "name": "oidc-discovery-provider",
+                            "port": [
+                              {
+                                "container_port": 443,
+                                "host_ip": "",
+                                "host_port": 0,
+                                "name": "",
+                                "protocol": "TCP"
+                              },
+                              {
+                                "container_port": 8008,
+                                "host_ip": "",
+                                "host_port": 0,
+                                "name": "",
+                                "protocol": "TCP"
+                              }
+                            ],
+                            "readiness_probe": [],
+                            "resources": [],
+                            "security_context": [],
+                            "startup_probe": [],
+                            "stdin": false,
+                            "stdin_once": false,
+                            "termination_message_path": "/dev/termination-log",
+                            "termination_message_policy": "",
+                            "tty": false,
+                            "volume_device": [],
+                            "volume_mount": [
+                              {
+                                "mount_path": "/spiffe-workload-api",
+                                "mount_propagation": "None",
+                                "name": "spiffe-workload-api",
+                                "read_only": true,
+                                "sub_path": "",
+                                "sub_path_expr": ""
+                              },
+                              {
+                                "mount_path": "/run/spire/oidc/config",
+                                "mount_propagation": "None",
+                                "name": "config",
+                                "read_only": true,
+                                "sub_path": "",
+                                "sub_path_expr": ""
+                              }
+                            ],
+                            "working_dir": ""
+                          }
+                        ],
+                        "dns_config": [],
+                        "dns_policy": "ClusterFirst",
+                        "enable_service_links": true,
+                        "host_aliases": [],
+                        "host_ipc": false,
+                        "host_network": false,
+                        "host_pid": false,
+                        "hostname": "",
+                        "image_pull_secrets": [],
+                        "init_container": [],
+                        "node_name": "",
+                        "node_selector": null,
+                        "os": [],
+                        "priority_class_name": "",
+                        "readiness_gate": [],
+                        "restart_policy": "Always",
+                        "runtime_class_name": "",
+                        "scheduler_name": "",
+                        "security_context": [],
+                        "service_account_name": "spire-edge-oidc-discovery-provider",
+                        "share_process_namespace": false,
+                        "subdomain": "",
+                        "termination_grace_period_seconds": 30,
+                        "toleration": [],
+                        "topology_spread_constraint": [],
+                        "volume": [
+                          {
+                            "aws_elastic_block_store": [],
+                            "azure_disk": [],
+                            "azure_file": [],
+                            "ceph_fs": [],
+                            "cinder": [],
+                            "config_map": [],
+                            "csi": [],
+                            "downward_api": [],
+                            "empty_dir": [],
+                            "ephemeral": [],
+                            "fc": [],
+                            "flex_volume": [],
+                            "flocker": [],
+                            "gce_persistent_disk": [],
+                            "git_repo": [],
+                            "glusterfs": [],
+                            "host_path": [
+                              {
+                                "path": "/run/spire/agent-sockets",
+                                "type": "Directory"
+                              }
+                            ],
+                            "iscsi": [],
+                            "local": [],
+                            "name": "spiffe-workload-api",
+                            "nfs": [],
+                            "persistent_volume_claim": [],
+                            "photon_persistent_disk": [],
+                            "projected": [],
+                            "quobyte": [],
+                            "rbd": [],
+                            "secret": [],
+                            "vsphere_volume": []
+                          },
+                          {
+                            "aws_elastic_block_store": [],
+                            "azure_disk": [],
+                            "azure_file": [],
+                            "ceph_fs": [],
+                            "cinder": [],
+                            "config_map": [
+                              {
+                                "default_mode": "0644",
+                                "items": [],
+                                "name": "spire-edge-oidc-discovery-config",
+                                "optional": false
+                              }
+                            ],
+                            "csi": [],
+                            "downward_api": [],
+                            "empty_dir": [],
+                            "ephemeral": [],
+                            "fc": [],
+                            "flex_volume": [],
+                            "flocker": [],
+                            "gce_persistent_disk": [],
+                            "git_repo": [],
+                            "glusterfs": [],
+                            "host_path": [],
+                            "iscsi": [],
+                            "local": [],
+                            "name": "config",
+                            "nfs": [],
+                            "persistent_volume_claim": [],
+                            "photon_persistent_disk": [],
+                            "projected": [],
+                            "quobyte": [],
+                            "rbd": [],
+                            "secret": [],
+                            "vsphere_volume": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "timeouts": null,
+            "wait_for_rollout": true
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6NjAwMDAwMDAwMDAwLCJ1cGRhdGUiOjYwMDAwMDAwMDAwMH0sInNjaGVtYV92ZXJzaW9uIjoiMSJ9",
+          "dependencies": [
+            "kubernetes_config_map.oidc_discovery_config",
+            "kubernetes_namespace.store_edge",
+            "kubernetes_service_account.oidc_discovery"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_deployment",
+      "name": "webapp_frontend",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "id": "megamart-store-apps/webapp-frontend",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 1,
+                "labels": {
+                  "app": "webapp-frontend"
+                },
+                "name": "webapp-frontend",
+                "namespace": "megamart-store-apps",
+                "resource_version": "6151",
+                "uid": "f34dfd3a-aa41-47a4-b443-9a97037dffdb"
+              }
+            ],
+            "spec": [
+              {
+                "min_ready_seconds": 0,
+                "paused": false,
+                "progress_deadline_seconds": 600,
+                "replicas": "1",
+                "revision_history_limit": 10,
+                "selector": [
+                  {
+                    "match_expressions": [],
+                    "match_labels": {
+                      "app": "webapp-frontend"
+                    }
+                  }
+                ],
+                "strategy": [
+                  {
+                    "rolling_update": [
+                      {
+                        "max_surge": "25%",
+                        "max_unavailable": "25%"
+                      }
+                    ],
+                    "type": "RollingUpdate"
+                  }
+                ],
+                "template": [
+                  {
+                    "metadata": [
+                      {
+                        "annotations": {},
+                        "generate_name": "",
+                        "generation": 0,
+                        "labels": {
+                          "app": "webapp-frontend"
+                        },
+                        "name": "",
+                        "namespace": "",
+                        "resource_version": "",
+                        "uid": ""
+                      }
+                    ],
+                    "spec": [
+                      {
+                        "active_deadline_seconds": 0,
+                        "affinity": [],
+                        "automount_service_account_token": true,
+                        "container": [
+                          {
+                            "args": [],
+                            "command": [],
+                            "env": [],
+                            "env_from": [],
+                            "image": "webapp-frontend:latest",
+                            "image_pull_policy": "Never",
+                            "lifecycle": [],
+                            "liveness_probe": [],
+                            "name": "webapp-frontend",
+                            "port": [
+                              {
+                                "container_port": 3000,
+                                "host_ip": "",
+                                "host_port": 0,
+                                "name": "",
+                                "protocol": "TCP"
+                              }
+                            ],
+                            "readiness_probe": [],
+                            "resources": [
+                              {
+                                "limits": {},
+                                "requests": {}
+                              }
+                            ],
+                            "security_context": [],
+                            "startup_probe": [],
+                            "stdin": false,
+                            "stdin_once": false,
+                            "termination_message_path": "/dev/termination-log",
+                            "termination_message_policy": "File",
+                            "tty": false,
+                            "volume_device": [],
+                            "volume_mount": [],
+                            "working_dir": ""
+                          }
+                        ],
+                        "dns_config": [],
+                        "dns_policy": "ClusterFirst",
+                        "enable_service_links": true,
+                        "host_aliases": [],
+                        "host_ipc": false,
+                        "host_network": false,
+                        "host_pid": false,
+                        "hostname": "",
+                        "image_pull_secrets": [],
+                        "init_container": [],
+                        "node_name": "",
+                        "node_selector": {},
+                        "os": [],
+                        "priority_class_name": "",
+                        "readiness_gate": [],
+                        "restart_policy": "Always",
+                        "runtime_class_name": "",
+                        "scheduler_name": "default-scheduler",
+                        "security_context": [],
+                        "service_account_name": "",
+                        "share_process_namespace": false,
+                        "subdomain": "",
+                        "termination_grace_period_seconds": 30,
+                        "toleration": [],
+                        "topology_spread_constraint": [],
+                        "volume": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "timeouts": null,
+            "wait_for_rollout": true
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6NjAwMDAwMDAwMDAwLCJ1cGRhdGUiOjYwMDAwMDAwMDAwMH0sInNjaGVtYV92ZXJzaW9uIjoiMSJ9",
+          "dependencies": [
+            "kubernetes_namespace.store_apps"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_manifest",
+      "name": "github_egress",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "computed_fields": null,
+            "field_manager": [],
+            "manifest": {
+              "value": {
+                "apiVersion": "networking.istio.io/v1beta1",
+                "kind": "ServiceEntry",
+                "metadata": {
+                  "name": "github-raw-egress",
+                  "namespace": "megamart-store-apps"
+                },
+                "spec": {
+                  "hosts": [
+                    "raw.githubusercontent.com",
+                    "github.com",
+                    "codeload.github.com",
+                    "docker.io",
+                    "registry-1.docker.io",
+                    "production.cloudflare.docker.com"
+                  ],
+                  "location": "MESH_EXTERNAL",
+                  "ports": [
+                    {
+                      "name": "https",
+                      "number": 443,
+                      "protocol": "TLS"
+                    }
+                  ],
+                  "resolution": "DNS"
+                }
+              },
+              "type": [
+                "object",
+                {
+                  "apiVersion": "string",
+                  "kind": "string",
+                  "metadata": [
+                    "object",
+                    {
+                      "name": "string",
+                      "namespace": "string"
+                    }
+                  ],
+                  "spec": [
+                    "object",
+                    {
+                      "hosts": [
+                        "tuple",
+                        [
+                          "string",
+                          "string",
+                          "string",
+                          "string",
+                          "string",
+                          "string"
+                        ]
+                      ],
+                      "location": "string",
+                      "ports": [
+                        "tuple",
+                        [
+                          [
+                            "object",
+                            {
+                              "name": "string",
+                              "number": "number",
+                              "protocol": "string"
+                            }
+                          ]
+                        ]
+                      ],
+                      "resolution": "string"
+                    }
+                  ]
+                }
+              ]
+            },
+            "object": {
+              "value": {
+                "apiVersion": "networking.istio.io/v1beta1",
+                "kind": "ServiceEntry",
+                "metadata": {
+                  "annotations": null,
+                  "creationTimestamp": null,
+                  "deletionGracePeriodSeconds": null,
+                  "deletionTimestamp": null,
+                  "finalizers": null,
+                  "generateName": null,
+                  "generation": null,
+                  "labels": null,
+                  "managedFields": null,
+                  "name": "github-raw-egress",
+                  "namespace": "megamart-store-apps",
+                  "ownerReferences": null,
+                  "resourceVersion": null,
+                  "selfLink": null,
+                  "uid": null
+                },
+                "spec": {
+                  "addresses": null,
+                  "endpoints": null,
+                  "exportTo": null,
+                  "hosts": [
+                    "raw.githubusercontent.com",
+                    "github.com",
+                    "codeload.github.com",
+                    "docker.io",
+                    "registry-1.docker.io",
+                    "production.cloudflare.docker.com"
+                  ],
+                  "location": "MESH_EXTERNAL",
+                  "ports": [
+                    {
+                      "name": "https",
+                      "number": 443,
+                      "protocol": "TLS",
+                      "targetPort": null
+                    }
+                  ],
+                  "resolution": "DNS",
+                  "subjectAltNames": null,
+                  "workloadSelector": {
+                    "labels": null
+                  }
+                }
+              },
+              "type": [
+                "object",
+                {
+                  "apiVersion": "string",
+                  "kind": "string",
+                  "metadata": [
+                    "object",
+                    {
+                      "annotations": [
+                        "map",
+                        "string"
+                      ],
+                      "creationTimestamp": "string",
+                      "deletionGracePeriodSeconds": "number",
+                      "deletionTimestamp": "string",
+                      "finalizers": [
+                        "list",
+                        "string"
+                      ],
+                      "generateName": "string",
+                      "generation": "number",
+                      "labels": [
+                        "map",
+                        "string"
+                      ],
+                      "managedFields": [
+                        "tuple",
+                        [
+                          [
+                            "object",
+                            {
+                              "apiVersion": "string",
+                              "fieldsType": "string",
+                              "fieldsV1": "dynamic",
+                              "manager": "string",
+                              "operation": "string",
+                              "subresource": "string",
+                              "time": "string"
+                            }
+                          ]
+                        ]
+                      ],
+                      "name": "string",
+                      "namespace": "string",
+                      "ownerReferences": [
+                        "list",
+                        [
+                          "object",
+                          {
+                            "apiVersion": "string",
+                            "blockOwnerDeletion": "bool",
+                            "controller": "bool",
+                            "kind": "string",
+                            "name": "string",
+                            "uid": "string"
+                          }
+                        ]
+                      ],
+                      "resourceVersion": "string",
+                      "selfLink": "string",
+                      "uid": "string"
+                    }
+                  ],
+                  "spec": [
+                    "object",
+                    {
+                      "addresses": [
+                        "list",
+                        "string"
+                      ],
+                      "endpoints": [
+                        "list",
+                        [
+                          "object",
+                          {
+                            "address": "string",
+                            "labels": [
+                              "map",
+                              "string"
+                            ],
+                            "locality": "string",
+                            "network": "string",
+                            "ports": [
+                              "map",
+                              "number"
+                            ],
+                            "serviceAccount": "string",
+                            "weight": "number"
+                          }
+                        ]
+                      ],
+                      "exportTo": [
+                        "list",
+                        "string"
+                      ],
+                      "hosts": [
+                        "list",
+                        "string"
+                      ],
+                      "location": "string",
+                      "ports": [
+                        "list",
+                        [
+                          "object",
+                          {
+                            "name": "string",
+                            "number": "number",
+                            "protocol": "string",
+                            "targetPort": "number"
+                          }
+                        ]
+                      ],
+                      "resolution": "string",
+                      "subjectAltNames": [
+                        "list",
+                        "string"
+                      ],
+                      "workloadSelector": [
+                        "object",
+                        {
+                          "labels": [
+                            "map",
+                            "string"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "timeouts": [],
+            "wait": [],
+            "wait_for": null
+          },
+          "sensitive_attributes": [],
+          "dependencies": [
+            "kubernetes_namespace.store_apps"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_manifest",
+      "name": "keycloak_authz",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "computed_fields": null,
+            "field_manager": [],
+            "manifest": {
+              "value": {
+                "apiVersion": "security.istio.io/v1beta1",
+                "kind": "AuthorizationPolicy",
+                "metadata": {
+                  "name": "keycloak-split-path",
+                  "namespace": "megamart-store-edge"
+                },
+                "spec": {
+                  "rules": [
+                    {
+                      "to": [
+                        {
+                          "operation": {
+                            "paths": [
+                              "/realms/*/protocol/*",
+                              "/realms/*/.well-known/*",
+                              "/resources/*"
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "from": [
+                        {
+                          "source": {
+                            "principals": [
+                              "spiffe://megamart.com/ns/megamart-store-apps/sa/ai-agent"
+                            ]
+                          }
+                        }
+                      ],
+                      "to": [
+                        {
+                          "operation": {
+                            "paths": [
+                              "/realms/*/protocol/openid-connect/token*"
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "from": [
+                        {
+                          "source": {
+                            "principals": [
+                              "spiffe://megamart.com/ns/megamart-store-edge/sa/keycloak-provisioner"
+                            ]
+                          }
+                        }
+                      ],
+                      "to": [
+                        {
+                          "operation": {
+                            "paths": [
+                              "*"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "selector": {
+                    "matchLabels": {
+                      "app.kubernetes.io/name": "keycloak"
+                    }
+                  }
+                }
+              },
+              "type": [
+                "object",
+                {
+                  "apiVersion": "string",
+                  "kind": "string",
+                  "metadata": [
+                    "object",
+                    {
+                      "name": "string",
+                      "namespace": "string"
+                    }
+                  ],
+                  "spec": [
+                    "object",
+                    {
+                      "rules": [
+                        "tuple",
+                        [
+                          [
+                            "object",
+                            {
+                              "to": [
+                                "tuple",
+                                [
+                                  [
+                                    "object",
+                                    {
+                                      "operation": [
+                                        "object",
+                                        {
+                                          "paths": [
+                                            "tuple",
+                                            [
+                                              "string",
+                                              "string",
+                                              "string"
+                                            ]
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                ]
+                              ]
+                            }
+                          ],
+                          [
+                            "object",
+                            {
+                              "from": [
+                                "tuple",
+                                [
+                                  [
+                                    "object",
+                                    {
+                                      "source": [
+                                        "object",
+                                        {
+                                          "principals": [
+                                            "tuple",
+                                            [
+                                              "string"
+                                            ]
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                ]
+                              ],
+                              "to": [
+                                "tuple",
+                                [
+                                  [
+                                    "object",
+                                    {
+                                      "operation": [
+                                        "object",
+                                        {
+                                          "paths": [
+                                            "tuple",
+                                            [
+                                              "string"
+                                            ]
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                ]
+                              ]
+                            }
+                          ],
+                          [
+                            "object",
+                            {
+                              "from": [
+                                "tuple",
+                                [
+                                  [
+                                    "object",
+                                    {
+                                      "source": [
+                                        "object",
+                                        {
+                                          "principals": [
+                                            "tuple",
+                                            [
+                                              "string"
+                                            ]
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                ]
+                              ],
+                              "to": [
+                                "tuple",
+                                [
+                                  [
+                                    "object",
+                                    {
+                                      "operation": [
+                                        "object",
+                                        {
+                                          "paths": [
+                                            "tuple",
+                                            [
+                                              "string"
+                                            ]
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                ]
+                              ]
+                            }
+                          ]
+                        ]
+                      ],
+                      "selector": [
+                        "object",
+                        {
+                          "matchLabels": [
+                            "object",
+                            {
+                              "app.kubernetes.io/name": "string"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "object": {
+              "value": {
+                "apiVersion": "security.istio.io/v1beta1",
+                "kind": "AuthorizationPolicy",
+                "metadata": {
+                  "annotations": null,
+                  "creationTimestamp": null,
+                  "deletionGracePeriodSeconds": null,
+                  "deletionTimestamp": null,
+                  "finalizers": null,
+                  "generateName": null,
+                  "generation": null,
+                  "labels": null,
+                  "managedFields": null,
+                  "name": "keycloak-split-path",
+                  "namespace": "megamart-store-edge",
+                  "ownerReferences": null,
+                  "resourceVersion": null,
+                  "selfLink": null,
+                  "uid": null
+                },
+                "spec": {
+                  "action": null,
+                  "provider": {
+                    "name": null
+                  },
+                  "rules": [
+                    {
+                      "from": null,
+                      "to": [
+                        {
+                          "operation": {
+                            "hosts": null,
+                            "methods": null,
+                            "notHosts": null,
+                            "notMethods": null,
+                            "notPaths": null,
+                            "notPorts": null,
+                            "paths": [
+                              "/realms/*/protocol/*",
+                              "/realms/*/.well-known/*",
+                              "/resources/*"
+                            ],
+                            "ports": null
+                          }
+                        }
+                      ],
+                      "when": null
+                    },
+                    {
+                      "from": [
+                        {
+                          "source": {
+                            "ipBlocks": null,
+                            "namespaces": null,
+                            "notIpBlocks": null,
+                            "notNamespaces": null,
+                            "notPrincipals": null,
+                            "notRemoteIpBlocks": null,
+                            "notRequestPrincipals": null,
+                            "notServiceAccounts": null,
+                            "principals": [
+                              "spiffe://megamart.com/ns/megamart-store-apps/sa/ai-agent"
+                            ],
+                            "remoteIpBlocks": null,
+                            "requestPrincipals": null,
+                            "serviceAccounts": null
+                          }
+                        }
+                      ],
+                      "to": [
+                        {
+                          "operation": {
+                            "hosts": null,
+                            "methods": null,
+                            "notHosts": null,
+                            "notMethods": null,
+                            "notPaths": null,
+                            "notPorts": null,
+                            "paths": [
+                              "/realms/*/protocol/openid-connect/token*"
+                            ],
+                            "ports": null
+                          }
+                        }
+                      ],
+                      "when": null
+                    },
+                    {
+                      "from": [
+                        {
+                          "source": {
+                            "ipBlocks": null,
+                            "namespaces": null,
+                            "notIpBlocks": null,
+                            "notNamespaces": null,
+                            "notPrincipals": null,
+                            "notRemoteIpBlocks": null,
+                            "notRequestPrincipals": null,
+                            "notServiceAccounts": null,
+                            "principals": [
+                              "spiffe://megamart.com/ns/megamart-store-edge/sa/keycloak-provisioner"
+                            ],
+                            "remoteIpBlocks": null,
+                            "requestPrincipals": null,
+                            "serviceAccounts": null
+                          }
+                        }
+                      ],
+                      "to": [
+                        {
+                          "operation": {
+                            "hosts": null,
+                            "methods": null,
+                            "notHosts": null,
+                            "notMethods": null,
+                            "notPaths": null,
+                            "notPorts": null,
+                            "paths": [
+                              "*"
+                            ],
+                            "ports": null
+                          }
+                        }
+                      ],
+                      "when": null
+                    }
+                  ],
+                  "selector": {
+                    "matchLabels": {
+                      "app.kubernetes.io/name": "keycloak"
+                    }
+                  },
+                  "targetRef": {
+                    "group": null,
+                    "kind": null,
+                    "name": null,
+                    "namespace": null
+                  },
+                  "targetRefs": null
+                }
+              },
+              "type": [
+                "object",
+                {
+                  "apiVersion": "string",
+                  "kind": "string",
+                  "metadata": [
+                    "object",
+                    {
+                      "annotations": [
+                        "map",
+                        "string"
+                      ],
+                      "creationTimestamp": "string",
+                      "deletionGracePeriodSeconds": "number",
+                      "deletionTimestamp": "string",
+                      "finalizers": [
+                        "list",
+                        "string"
+                      ],
+                      "generateName": "string",
+                      "generation": "number",
+                      "labels": [
+                        "map",
+                        "string"
+                      ],
+                      "managedFields": [
+                        "tuple",
+                        [
+                          [
+                            "object",
+                            {
+                              "apiVersion": "string",
+                              "fieldsType": "string",
+                              "fieldsV1": "dynamic",
+                              "manager": "string",
+                              "operation": "string",
+                              "subresource": "string",
+                              "time": "string"
+                            }
+                          ]
+                        ]
+                      ],
+                      "name": "string",
+                      "namespace": "string",
+                      "ownerReferences": [
+                        "list",
+                        [
+                          "object",
+                          {
+                            "apiVersion": "string",
+                            "blockOwnerDeletion": "bool",
+                            "controller": "bool",
+                            "kind": "string",
+                            "name": "string",
+                            "uid": "string"
+                          }
+                        ]
+                      ],
+                      "resourceVersion": "string",
+                      "selfLink": "string",
+                      "uid": "string"
+                    }
+                  ],
+                  "spec": [
+                    "object",
+                    {
+                      "action": "string",
+                      "provider": [
+                        "object",
+                        {
+                          "name": "string"
+                        }
+                      ],
+                      "rules": [
+                        "list",
+                        [
+                          "object",
+                          {
+                            "from": [
+                              "list",
+                              [
+                                "object",
+                                {
+                                  "source": [
+                                    "object",
+                                    {
+                                      "ipBlocks": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "namespaces": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "notIpBlocks": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "notNamespaces": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "notPrincipals": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "notRemoteIpBlocks": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "notRequestPrincipals": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "notServiceAccounts": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "principals": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "remoteIpBlocks": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "requestPrincipals": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "serviceAccounts": [
+                                        "list",
+                                        "string"
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            ],
+                            "to": [
+                              "list",
+                              [
+                                "object",
+                                {
+                                  "operation": [
+                                    "object",
+                                    {
+                                      "hosts": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "methods": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "notHosts": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "notMethods": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "notPaths": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "notPorts": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "paths": [
+                                        "list",
+                                        "string"
+                                      ],
+                                      "ports": [
+                                        "list",
+                                        "string"
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            ],
+                            "when": [
+                              "list",
+                              [
+                                "object",
+                                {
+                                  "key": "string",
+                                  "notValues": [
+                                    "list",
+                                    "string"
+                                  ],
+                                  "values": [
+                                    "list",
+                                    "string"
+                                  ]
+                                }
+                              ]
+                            ]
+                          }
+                        ]
+                      ],
+                      "selector": [
+                        "object",
+                        {
+                          "matchLabels": [
+                            "map",
+                            "string"
+                          ]
+                        }
+                      ],
+                      "targetRef": [
+                        "object",
+                        {
+                          "group": "string",
+                          "kind": "string",
+                          "name": "string",
+                          "namespace": "string"
+                        }
+                      ],
+                      "targetRefs": [
+                        "list",
+                        [
+                          "object",
+                          {
+                            "group": "string",
+                            "kind": "string",
+                            "name": "string",
+                            "namespace": "string"
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "timeouts": [],
+            "wait": [],
+            "wait_for": null
+          },
+          "sensitive_attributes": [],
+          "dependencies": [
+            "kubernetes_namespace.store_apps",
+            "kubernetes_namespace.store_edge",
+            "kubernetes_service_account.ai_agent",
+            "kubernetes_service_account.keycloak_provisioner"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_manifest",
+      "name": "keycloak_peer_auth",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "computed_fields": null,
+            "field_manager": [],
+            "manifest": {
+              "value": {
+                "apiVersion": "security.istio.io/v1beta1",
+                "kind": "PeerAuthentication",
+                "metadata": {
+                  "name": "keycloak-permissive",
+                  "namespace": "megamart-store-edge"
+                },
+                "spec": {
+                  "mtls": {
+                    "mode": "PERMISSIVE"
+                  }
+                }
+              },
+              "type": [
+                "object",
+                {
+                  "apiVersion": "string",
+                  "kind": "string",
+                  "metadata": [
+                    "object",
+                    {
+                      "name": "string",
+                      "namespace": "string"
+                    }
+                  ],
+                  "spec": [
+                    "object",
+                    {
+                      "mtls": [
+                        "object",
+                        {
+                          "mode": "string"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "object": {
+              "value": {
+                "apiVersion": "security.istio.io/v1beta1",
+                "kind": "PeerAuthentication",
+                "metadata": {
+                  "annotations": null,
+                  "creationTimestamp": null,
+                  "deletionGracePeriodSeconds": null,
+                  "deletionTimestamp": null,
+                  "finalizers": null,
+                  "generateName": null,
+                  "generation": null,
+                  "labels": null,
+                  "managedFields": null,
+                  "name": "keycloak-permissive",
+                  "namespace": "megamart-store-edge",
+                  "ownerReferences": null,
+                  "resourceVersion": null,
+                  "selfLink": null,
+                  "uid": null
+                },
+                "spec": {
+                  "mtls": {
+                    "mode": "PERMISSIVE"
+                  },
+                  "portLevelMtls": null,
+                  "selector": {
+                    "matchLabels": null
+                  }
+                }
+              },
+              "type": [
+                "object",
+                {
+                  "apiVersion": "string",
+                  "kind": "string",
+                  "metadata": [
+                    "object",
+                    {
+                      "annotations": [
+                        "map",
+                        "string"
+                      ],
+                      "creationTimestamp": "string",
+                      "deletionGracePeriodSeconds": "number",
+                      "deletionTimestamp": "string",
+                      "finalizers": [
+                        "list",
+                        "string"
+                      ],
+                      "generateName": "string",
+                      "generation": "number",
+                      "labels": [
+                        "map",
+                        "string"
+                      ],
+                      "managedFields": [
+                        "tuple",
+                        [
+                          [
+                            "object",
+                            {
+                              "apiVersion": "string",
+                              "fieldsType": "string",
+                              "fieldsV1": "dynamic",
+                              "manager": "string",
+                              "operation": "string",
+                              "subresource": "string",
+                              "time": "string"
+                            }
+                          ]
+                        ]
+                      ],
+                      "name": "string",
+                      "namespace": "string",
+                      "ownerReferences": [
+                        "list",
+                        [
+                          "object",
+                          {
+                            "apiVersion": "string",
+                            "blockOwnerDeletion": "bool",
+                            "controller": "bool",
+                            "kind": "string",
+                            "name": "string",
+                            "uid": "string"
+                          }
+                        ]
+                      ],
+                      "resourceVersion": "string",
+                      "selfLink": "string",
+                      "uid": "string"
+                    }
+                  ],
+                  "spec": [
+                    "object",
+                    {
+                      "mtls": [
+                        "object",
+                        {
+                          "mode": "string"
+                        }
+                      ],
+                      "portLevelMtls": [
+                        "map",
+                        [
+                          "object",
+                          {
+                            "mode": "string"
+                          }
+                        ]
+                      ],
+                      "selector": [
+                        "object",
+                        {
+                          "matchLabels": [
+                            "map",
+                            "string"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "timeouts": [],
+            "wait": [],
+            "wait_for": null
+          },
+          "sensitive_attributes": [],
+          "dependencies": [
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_namespace",
+      "name": "cloud_tier",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "megamart-cloud-tier",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "megamart-cloud-tier",
+                "resource_version": "4920",
+                "uid": "63046b03-5837-4a6b-be45-bd7d0b120786"
+              }
+            ],
+            "timeouts": null,
+            "wait_for_default_service_account": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiZGVsZXRlIjozMDAwMDAwMDAwMDB9fQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_namespace",
+      "name": "istio_system",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "istio-system",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "istio-system",
+                "resource_version": "4923",
+                "uid": "0f4669da-a4fa-4628-a7f3-283608b81c9a"
+              }
+            ],
+            "timeouts": null,
+            "wait_for_default_service_account": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiZGVsZXRlIjozMDAwMDAwMDAwMDB9fQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_namespace",
+      "name": "store_apps",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "megamart-store-apps",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {
+                  "istio-injection": "enabled"
+                },
+                "name": "megamart-store-apps",
+                "resource_version": "4921",
+                "uid": "9f7d0327-e349-40b1-81ea-4cc9bc15eb72"
+              }
+            ],
+            "timeouts": null,
+            "wait_for_default_service_account": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiZGVsZXRlIjozMDAwMDAwMDAwMDB9fQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_namespace",
+      "name": "store_edge",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "megamart-store-edge",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {
+                  "istio-injection": "enabled"
+                },
+                "name": "megamart-store-edge",
+                "resource_version": "4922",
+                "uid": "4a9ae926-202a-4161-b5cd-c3e0148f702c"
+              }
+            ],
+            "timeouts": null,
+            "wait_for_default_service_account": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiZGVsZXRlIjozMDAwMDAwMDAwMDB9fQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_service",
+      "name": "ai_agent",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "id": "megamart-store-apps/ai-agent",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "ai-agent",
+                "namespace": "megamart-store-apps",
+                "resource_version": "5988",
+                "uid": "605ec344-c5dc-4ddb-8d13-011a26b26803"
+              }
+            ],
+            "spec": [
+              {
+                "allocate_load_balancer_node_ports": true,
+                "cluster_ip": "10.43.196.103",
+                "cluster_ips": [
+                  "10.43.196.103"
+                ],
+                "external_ips": [],
+                "external_name": "",
+                "external_traffic_policy": "Cluster",
+                "health_check_node_port": 0,
+                "internal_traffic_policy": "Cluster",
+                "ip_families": [
+                  "IPv4"
+                ],
+                "ip_family_policy": "SingleStack",
+                "load_balancer_class": "",
+                "load_balancer_ip": "",
+                "load_balancer_source_ranges": [],
+                "port": [
+                  {
+                    "app_protocol": "",
+                    "name": "",
+                    "node_port": 30001,
+                    "port": 8000,
+                    "protocol": "TCP",
+                    "target_port": "8000"
+                  }
+                ],
+                "publish_not_ready_addresses": false,
+                "selector": {
+                  "app": "ai-agent"
+                },
+                "session_affinity": "None",
+                "session_affinity_config": [],
+                "type": "NodePort"
+              }
+            ],
+            "status": [
+              {
+                "load_balancer": [
+                  {
+                    "ingress": []
+                  }
+                ]
+              }
+            ],
+            "timeouts": null,
+            "wait_for_load_balancer": true
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDB9LCJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "kubernetes_namespace.store_apps"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_service",
+      "name": "mcp_server",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "id": "megamart-store-apps/mcp-server",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "mcp-server",
+                "namespace": "megamart-store-apps",
+                "resource_version": "5987",
+                "uid": "780223f1-9716-42c2-9a8a-b3a7ccbc8e53"
+              }
+            ],
+            "spec": [
+              {
+                "allocate_load_balancer_node_ports": true,
+                "cluster_ip": "10.43.141.218",
+                "cluster_ips": [
+                  "10.43.141.218"
+                ],
+                "external_ips": [],
+                "external_name": "",
+                "external_traffic_policy": "",
+                "health_check_node_port": 0,
+                "internal_traffic_policy": "Cluster",
+                "ip_families": [
+                  "IPv4"
+                ],
+                "ip_family_policy": "SingleStack",
+                "load_balancer_class": "",
+                "load_balancer_ip": "",
+                "load_balancer_source_ranges": [],
+                "port": [
+                  {
+                    "app_protocol": "",
+                    "name": "",
+                    "node_port": 0,
+                    "port": 8001,
+                    "protocol": "TCP",
+                    "target_port": "8001"
+                  }
+                ],
+                "publish_not_ready_addresses": false,
+                "selector": {
+                  "app": "mcp-server"
+                },
+                "session_affinity": "None",
+                "session_affinity_config": [],
+                "type": "ClusterIP"
+              }
+            ],
+            "status": [
+              {
+                "load_balancer": [
+                  {
+                    "ingress": []
+                  }
+                ]
+              }
+            ],
+            "timeouts": null,
+            "wait_for_load_balancer": true
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDB9LCJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "kubernetes_namespace.store_apps"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_service",
+      "name": "oidc_discovery",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "id": "megamart-store-edge/spire-edge-spiffe-oidc-discovery-provider",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "spire-edge-spiffe-oidc-discovery-provider",
+                "namespace": "megamart-store-edge",
+                "resource_version": "6000",
+                "uid": "79d3dd1f-c4ef-4074-a59d-d9a8a3f1350f"
+              }
+            ],
+            "spec": [
+              {
+                "allocate_load_balancer_node_ports": true,
+                "cluster_ip": "10.43.181.57",
+                "cluster_ips": [
+                  "10.43.181.57"
+                ],
+                "external_ips": [],
+                "external_name": "",
+                "external_traffic_policy": "",
+                "health_check_node_port": 0,
+                "internal_traffic_policy": "Cluster",
+                "ip_families": [
+                  "IPv4"
+                ],
+                "ip_family_policy": "SingleStack",
+                "load_balancer_class": "",
+                "load_balancer_ip": "",
+                "load_balancer_source_ranges": [],
+                "port": [
+                  {
+                    "app_protocol": "",
+                    "name": "https",
+                    "node_port": 0,
+                    "port": 443,
+                    "protocol": "TCP",
+                    "target_port": "443"
+                  },
+                  {
+                    "app_protocol": "",
+                    "name": "health",
+                    "node_port": 0,
+                    "port": 8008,
+                    "protocol": "TCP",
+                    "target_port": "8008"
+                  }
+                ],
+                "publish_not_ready_addresses": false,
+                "selector": {
+                  "app": "oidc-discovery"
+                },
+                "session_affinity": "None",
+                "session_affinity_config": [],
+                "type": "ClusterIP"
+              }
+            ],
+            "status": [
+              {
+                "load_balancer": [
+                  {
+                    "ingress": []
+                  }
+                ]
+              }
+            ],
+            "timeouts": null,
+            "wait_for_load_balancer": true
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDB9LCJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_service",
+      "name": "webapp_frontend",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "id": "megamart-store-apps/webapp-frontend",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "webapp-frontend",
+                "namespace": "megamart-store-apps",
+                "resource_version": "6002",
+                "uid": "c08ea8bd-55e9-4019-b64b-da048227387b"
+              }
+            ],
+            "spec": [
+              {
+                "allocate_load_balancer_node_ports": true,
+                "cluster_ip": "10.43.22.234",
+                "cluster_ips": [
+                  "10.43.22.234"
+                ],
+                "external_ips": [],
+                "external_name": "",
+                "external_traffic_policy": "Cluster",
+                "health_check_node_port": 0,
+                "internal_traffic_policy": "Cluster",
+                "ip_families": [
+                  "IPv4"
+                ],
+                "ip_family_policy": "SingleStack",
+                "load_balancer_class": "",
+                "load_balancer_ip": "",
+                "load_balancer_source_ranges": [],
+                "port": [
+                  {
+                    "app_protocol": "",
+                    "name": "",
+                    "node_port": 30000,
+                    "port": 80,
+                    "protocol": "TCP",
+                    "target_port": "3000"
+                  }
+                ],
+                "publish_not_ready_addresses": false,
+                "selector": {
+                  "app": "webapp-frontend"
+                },
+                "session_affinity": "None",
+                "session_affinity_config": [],
+                "type": "NodePort"
+              }
+            ],
+            "status": [
+              {
+                "load_balancer": [
+                  {
+                    "ingress": []
+                  }
+                ]
+              }
+            ],
+            "timeouts": null,
+            "wait_for_load_balancer": true
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDB9LCJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "kubernetes_namespace.store_apps"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_service_account",
+      "name": "ai_agent",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "automount_service_account_token": true,
+            "default_secret_name": "",
+            "id": "megamart-store-apps/ai-agent",
+            "image_pull_secret": [],
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "ai-agent",
+                "namespace": "megamart-store-apps",
+                "resource_version": "5979",
+                "uid": "7d999708-2304-41f9-917d-02b3ff2d5e3f"
+              }
+            ],
+            "secret": [],
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjozMDAwMDAwMDAwMH19",
+          "dependencies": [
+            "kubernetes_namespace.store_apps"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_service_account",
+      "name": "keycloak_provisioner",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "automount_service_account_token": true,
+            "default_secret_name": "",
+            "id": "megamart-store-edge/keycloak-provisioner",
+            "image_pull_secret": [],
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "keycloak-provisioner",
+                "namespace": "megamart-store-edge",
+                "resource_version": "5980",
+                "uid": "7eec09d4-b3ce-4119-ba7c-f1540506e4e5"
+              }
+            ],
+            "secret": [],
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjozMDAwMDAwMDAwMH19",
+          "dependencies": [
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_service_account",
+      "name": "mcp_server",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "automount_service_account_token": true,
+            "default_secret_name": "",
+            "id": "megamart-store-apps/mcp-server",
+            "image_pull_secret": [],
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "mcp-server",
+                "namespace": "megamart-store-apps",
+                "resource_version": "5998",
+                "uid": "19f28ac3-140a-4d46-a766-e526ca47e799"
+              }
+            ],
+            "secret": [],
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjozMDAwMDAwMDAwMH19",
+          "dependencies": [
+            "kubernetes_namespace.store_apps"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_service_account",
+      "name": "oidc_discovery",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "automount_service_account_token": true,
+            "default_secret_name": "",
+            "id": "megamart-store-edge/spire-edge-oidc-discovery-provider",
+            "image_pull_secret": [],
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "spire-edge-oidc-discovery-provider",
+                "namespace": "megamart-store-edge",
+                "resource_version": "5981",
+                "uid": "e1e6fd63-30d4-4f7c-ba59-f9c33132113d"
+              }
+            ],
+            "secret": [],
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjozMDAwMDAwMDAwMH19",
+          "dependencies": [
+            "kubernetes_namespace.store_edge"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "null_resource",
+      "name": "spire_workload_registrations",
+      "provider": "provider[\"registry.terraform.io/hashicorp/null\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "2085507374375171411",
+            "triggers": {
+              "ai_agent_sa": "ai-agent",
+              "mcp_server_sa": "mcp-server",
+              "namespace": "megamart-store-apps"
+            }
+          },
+          "sensitive_attributes": [],
+          "dependencies": [
+            "data.kubernetes_config_map.spire_cloud_bundle",
+            "helm_release.spire_cloud",
+            "helm_release.spire_crds",
+            "helm_release.spire_edge",
+            "kubernetes_config_map.opa_config",
+            "kubernetes_deployment.ai_agent",
+            "kubernetes_deployment.mcp_server",
+            "kubernetes_namespace.cloud_tier",
+            "kubernetes_namespace.store_apps",
+            "kubernetes_namespace.store_edge",
+            "kubernetes_service_account.ai_agent",
+            "kubernetes_service_account.keycloak_provisioner",
+            "kubernetes_service_account.mcp_server",
+            "kubernetes_service_account.oidc_discovery"
+          ]
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}

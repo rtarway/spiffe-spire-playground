@@ -2,7 +2,7 @@ terraform {
   required_providers {
     kubernetes = { source = "hashicorp/kubernetes", version = "~> 2.0" }
     helm       = { source = "hashicorp/helm", version = "~> 2.0" }
-    keycloak   = { source = "keycloak/keycloak", version = ">= 5.0.0" }
+    # keycloak   = { source = "keycloak/keycloak", version = ">= 5.0.0" }
   }
 }
 
@@ -20,12 +20,12 @@ provider "helm" {
 }
 
 # The Identity Authority Provider (Assumes NodePort 30080)
-provider "keycloak" {
-  client_id = "admin-cli"
-  url       = "http://localhost:30080"
-  username  = "admin"
-  password  = "megamart_secure_admin_pass"
-}
+# provider "keycloak" {
+#   client_id = "admin-cli"
+#   url       = "http://localhost:30080"
+#   username  = "admin"
+#   password  = "megamart_secure_admin_pass"
+# }
 
 # ==========================================
 # STAGE 1: GLOBAL IDENTITY AUTHORITY (CLOUD)
@@ -33,7 +33,12 @@ provider "keycloak" {
 # Birthed once to anchor the megamart.com trust domain.
 
 resource "kubernetes_namespace" "cloud_tier" {
-  metadata { name = "megamart-cloud-tier" }
+  metadata {
+    name = "megamart-cloud-tier"
+    labels = {
+      "istio-injection" = "enabled"
+    }
+  }
 }
 
 resource "helm_release" "spire_crds" {
@@ -53,6 +58,18 @@ resource "helm_release" "spire_cloud" {
   set {
     name  = "global.spire.trustDomain"
     value = "megamart.com"
+  }
+  set {
+    name  = "global.spire.clusterName"
+    value = "megamart-cluster"
+  }
+  set {
+    name  = "spire-server.ca_subject.common_name"
+    value = "megamart.com"
+  }
+  set {
+    name  = "spire-server.ca_subject.organization"
+    value = "MegaMart"
   }
   set {
     # Obscured custom port for ultra secure setup
@@ -89,6 +106,22 @@ resource "helm_release" "spire_cloud" {
     name  = "spire-server.controllerManager.validatingWebhookConfiguration.upgradeHook.image.repository"
     value = "bitnami/kubectl"
   }
+
+  values = [<<-YAML
+    spire-server:
+      registrar:
+        enabled: true
+        config:
+          cluster: "megamart-cluster"
+      podAnnotations:
+        sidecar.istio.io/inject: "false"
+        traffic.sidecar.istio.io/excludeInboundPorts: "8081,8443"
+    spire-agent:
+      podAnnotations:
+        sidecar.istio.io/inject: "false"
+        traffic.sidecar.istio.io/excludeInboundPorts: "8081,8443"
+  YAML
+  ]
 }
 
 # ==========================================
@@ -115,24 +148,47 @@ resource "kubernetes_namespace" "store_apps" {
 }
 
 
-# Data source to read the Cloud Trust Bundle across namespaces
-data "kubernetes_config_map" "spire_cloud_bundle" {
-  metadata {
-    name      = "spire-bundle"
-    namespace = kubernetes_namespace.cloud_tier.metadata[0].name
-  }
-  depends_on = [helm_release.spire_cloud]
-}
+# =============================================================================
+# TRUST BUNDLE BRIDGE: Extract the Cloud Root CA and inject into Edge namespace
+# =============================================================================
+# This null_resource deterministically syncs the trust bundle from the running
+# Cloud SPIRE Server into the Edge namespace. It runs AFTER the Edge Helm chart
+# is installed, ensuring the Edge Agent has the correct root CA to verify the
+# subordinated Edge Server's certificate chain.
 
-# Project the Cloud SPIRE Bundle into the Edge namespace to bridge the trust gap
-resource "kubernetes_config_map" "spire_cloud_bundle_bridge" {
-  metadata {
-    name      = "spire-bundle"
-    namespace = kubernetes_namespace.store_edge.metadata[0].name
+resource "null_resource" "spire_trust_bundle_sync" {
+  triggers = {
+    # Re-run if the Edge Helm release changes
+    edge_release_version = helm_release.spire_edge.metadata[0].revision
   }
 
-  data = {
-    "bundle.crt" = data.kubernetes_config_map.spire_cloud_bundle.data["bundle.crt"]
+  depends_on = [helm_release.spire_cloud, helm_release.spire_edge]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      KUBECTL=/Users/rtarway/.rd/bin/kubectl
+
+      echo "[1/4] Waiting for Cloud SPIRE Server to be Ready..."
+      $KUBECTL wait --for=condition=Ready pod/spire-cloud-server-0 \
+        -n megamart-cloud-tier --timeout=120s
+
+      echo "[2/4] Extracting Cloud Authority trust bundle..."
+      $KUBECTL exec -n megamart-cloud-tier spire-cloud-server-0 \
+        -c spire-server -- \
+        /opt/spire/bin/spire-server bundle show > /tmp/cloud-bundle.crt
+
+      echo "[3/4] Injecting Cloud bundle into Edge namespace as spire-bundle ConfigMap..."
+      $KUBECTL create configmap spire-bundle \
+        --from-file=bundle.crt=/tmp/cloud-bundle.crt \
+        -n megamart-store-edge \
+        --dry-run=client -o yaml | $KUBECTL apply -f -
+
+      echo "[4/4] Restarting Edge Agent DaemonSet to pick up fresh bundle..."
+      $KUBECTL rollout restart daemonset/spire-edge-agent -n megamart-store-edge
+      $KUBECTL rollout status daemonset/spire-edge-agent -n megamart-store-edge --timeout=120s
+
+      echo "Trust bundle sync complete."
+    EOT
   }
 }
 
@@ -163,7 +219,7 @@ resource "helm_release" "spire_edge" {
   }
   set {
     name  = "spire-agent.socketPath"
-    value = "/run/spire/agent-sockets/spire-agent.sock"
+    value = "/run/spire/sockets/spire-agent.sock"
   }
   
   # Ensure the socket is world-readable so non-root Istiod can talk to it
@@ -172,6 +228,14 @@ resource "helm_release" "spire_edge" {
     value = "true"
   }
 
+  set {
+    name  = "spire-server.ca_subject.common_name"
+    value = "megamart.com"
+  }
+  set {
+    name  = "spire-server.ca_subject.organization"
+    value = "MegaMart"
+  }
   set {
     name  = "spire-server.upstreamAuthority.spire.enabled"
     value = "true"
@@ -185,11 +249,9 @@ resource "helm_release" "spire_edge" {
     value = "8443"
   }
   
-  # Crucial: Provide the Cloud Root CA to verify the upstream server
-  set {
-    name  = "spire-server.upstreamAuthority.spire.config.rootCas"
-    value = data.kubernetes_config_map.spire_cloud_bundle.data["bundle.crt"]
-  }
+  # NOTE: rootCas for upstream authority verification is handled by the
+  # spire_trust_bundle_sync null_resource, which injects the Cloud Authority
+  # bundle directly into the spire-bundle ConfigMap after Helm install.
   set {
     name  = "spiffe-oidc-discovery-provider.enabled"
     value = "false"
@@ -200,7 +262,7 @@ resource "helm_release" "spire_edge" {
   }
   set {
     name  = "spiffe-csi-driver.config.agentSocketPath"
-    value = "/run/spire/agent-sockets/spire-agent.sock"
+    value = "/run/spire/sockets/spire-agent.sock"
   }
   set {
     name  = "spire-server.controllerManager.validatingWebhookConfiguration.upgradeHook.image.registry"
@@ -216,6 +278,22 @@ resource "helm_release" "spire_edge" {
     name  = "spire-server.notifier.k8sbundle.namespace"
     value = kubernetes_namespace.store_edge.metadata[0].name
   }
+
+  values = [<<-YAML
+    spire-server:
+      registrar:
+        enabled: true
+        config:
+          cluster: "megamart-cluster"
+      podAnnotations:
+        sidecar.istio.io/inject: "false"
+        traffic.sidecar.istio.io/excludeInboundPorts: "8081,8443"
+    spire-agent:
+      podAnnotations:
+        sidecar.istio.io/inject: "false"
+        traffic.sidecar.istio.io/excludeInboundPorts: "8081,8443"
+  YAML
+  ]
 }
 
 # --- NATIVE OIDC DISCOVERY PIVOT ---
@@ -256,73 +334,74 @@ resource "kubernetes_config_map" "oidc_discovery_config" {
   }
 }
 
-resource "kubernetes_deployment" "oidc_discovery" {
-  metadata {
-    name      = "spire-native-oidc-discovery"
-    namespace = kubernetes_namespace.store_edge.metadata[0].name
-  }
-
-  spec {
-    replicas = 1
-    selector {
-      match_labels = {
-        app = "oidc-discovery"
-      }
-    }
-
-    template {
-      metadata {
-        labels = {
-          app = "oidc-discovery"
-        }
-      }
-
-      spec {
-        service_account_name = kubernetes_service_account.oidc_discovery.metadata[0].name
-        container {
-          name  = "oidc-discovery-provider"
-          image = "ghcr.io/spiffe/oidc-discovery-provider:1.6.1"
-
-          args = ["-config", "/run/spire/oidc/config/oidc-discovery-provider.conf"]
-
-          port {
-            container_port = 443
-          }
-          port {
-            container_port = 8008
-          }
-
-          volume_mount {
-            name       = "spiffe-workload-api"
-            mount_path = "/spiffe-workload-api"
-            read_only  = true
-          }
-
-          volume_mount {
-            name       = "config"
-            mount_path = "/run/spire/oidc/config"
-            read_only  = true
-          }
-        }
-
-        volume {
-          name = "spiffe-workload-api"
-          host_path {
-            path = "/run/spire/agent-sockets"
-            type = "Directory"
-          }
-        }
-
-        volume {
-          name = "config"
-          config_map {
-            name = kubernetes_config_map.oidc_discovery_config.metadata[0].name
-          }
-        }
-      }
-    }
-  }
-}
+# resource "kubernetes_deployment" "oidc_discovery" {
+#   depends_on = [null_resource.spire_trust_bundle_sync]
+#   metadata {
+#     name      = "spire-native-oidc-discovery"
+#     namespace = kubernetes_namespace.store_edge.metadata[0].name
+#   }
+# 
+#   spec {
+#     replicas = 1
+#     selector {
+#       match_labels = {
+#         app = "oidc-discovery"
+#       }
+#     }
+# 
+#     template {
+#       metadata {
+#         labels = {
+#           app = "oidc-discovery"
+#         }
+#       }
+# 
+#       spec {
+#         service_account_name = kubernetes_service_account.oidc_discovery.metadata[0].name
+#         container {
+#           name  = "oidc-discovery-provider"
+#           image = "ghcr.io/spiffe/oidc-discovery-provider:1.6.1"
+# 
+#           args = ["-config", "/run/spire/oidc/config/oidc-discovery-provider.conf"]
+# 
+#           port {
+#             container_port = 443
+#           }
+#           port {
+#             container_port = 8008
+#           }
+# 
+#           volume_mount {
+#             name       = "spiffe-workload-api"
+#             mount_path = "/spiffe-workload-api"
+#             read_only  = true
+#           }
+# 
+#           volume_mount {
+#             name       = "config"
+#             mount_path = "/run/spire/oidc/config"
+#             read_only  = true
+#           }
+#         }
+# 
+#         volume {
+#           name = "spiffe-workload-api"
+#           host_path {
+#             path = "/run/spire/agent-sockets"
+#             type = "Directory"
+#           }
+#         }
+# 
+#         volume {
+#           name = "config"
+#           config_map {
+#             name = kubernetes_config_map.oidc_discovery_config.metadata[0].name
+#           }
+#         }
+#       }
+#     }
+#   }
+# }
 
 resource "kubernetes_service" "oidc_discovery" {
   metadata {
@@ -349,84 +428,9 @@ resource "kubernetes_service" "oidc_discovery" {
   }
 }
 
-# --- AUTOMATION: SPIRE Workload Registrations ---
-resource "null_resource" "spire_workload_registrations" {
-  triggers = {
-    # Re-run if the service account names or namespace change
-    ai_agent_sa   = kubernetes_service_account.ai_agent.metadata[0].name
-    mcp_server_sa = kubernetes_service_account.mcp_server.metadata[0].name
-    namespace     = kubernetes_namespace.store_apps.metadata[0].name
-  }
+# NOTE: Manual SPIRE registrations are removed.
+# The SPIRE Kubernetes Registrar now automatically handles workload registration.
 
-  depends_on = [helm_release.spire_edge, kubernetes_deployment.ai_agent, kubernetes_deployment.mcp_server]
-
-  provisioner "local-exec" {
-    command = <<EOT
-      echo "Creating SPIRE registration entries for apps..."
-      KUBECTL=/Users/rtarway/.rd/bin/kubectl
-      
-      # 1. Fetch the Agent's SPIFFE ID (needed as parentID)
-      # We assume the agent pod is up and its ID is discoverable
-      AGENT_ID=$($KUBECTL exec -n ${kubernetes_namespace.store_edge.metadata[0].name} spire-edge-server-0 -c spire-server -- /opt/spire/bin/spire-server agent list | grep "SPIFFE ID" | awk '{print $4}')
-      
-      if [ -z "$AGENT_ID" ]; then
-        echo "Could not find SPIRE Agent ID. Retrying in 10s..."
-        sleep 10
-        AGENT_ID=$($KUBECTL exec -n ${kubernetes_namespace.store_edge.metadata[0].name} spire-edge-server-0 -c spire-server -- /opt/spire/bin/spire-server agent list | grep "spiffe://" | cut -d' ' -f2 | head -n 1)
-      fi
-
-      echo "Using Parent ID: $AGENT_ID"
-
-      # 2. Create AI Agent Entry
-      $KUBECTL exec -n ${kubernetes_namespace.store_edge.metadata[0].name} spire-edge-server-0 -c spire-server -- \
-        /opt/spire/bin/spire-server entry create \
-        -parentID "$AGENT_ID" \
-        -spiffeID "spiffe://megamart.com/ns/${kubernetes_namespace.store_apps.metadata[0].name}/sa/${kubernetes_service_account.ai_agent.metadata[0].name}" \
-        -selector "k8s:ns:${kubernetes_namespace.store_apps.metadata[0].name}" \
-        -selector "k8s:sa:${kubernetes_service_account.ai_agent.metadata[0].name}"
-
-      # 3. Create MCP Server Entry
-      $KUBECTL exec -n ${kubernetes_namespace.store_edge.metadata[0].name} spire-edge-server-0 -c spire-server -- \
-        /opt/spire/bin/spire-server entry create \
-        -parentID "$AGENT_ID" \
-        -spiffeID "spiffe://megamart.com/ns/${kubernetes_namespace.store_apps.metadata[0].name}/sa/${kubernetes_service_account.mcp_server.metadata[0].name}" \
-        -selector "k8s:ns:${kubernetes_namespace.store_apps.metadata[0].name}" \
-        -selector "k8s:sa:${kubernetes_service_account.mcp_server.metadata[0].name}"
-
-      # 4. Create Keycloak Provisioner Entry
-      $KUBECTL exec -n ${kubernetes_namespace.store_edge.metadata[0].name} spire-edge-server-0 -c spire-server -- \
-        /opt/spire/bin/spire-server entry create \
-        -parentID "$AGENT_ID" \
-        -spiffeID "spiffe://megamart.com/ns/${kubernetes_namespace.store_edge.metadata[0].name}/sa/${kubernetes_service_account.keycloak_provisioner.metadata[0].name}" \
-        -selector "k8s:ns:${kubernetes_namespace.store_edge.metadata[0].name}" \
-        -selector "k8s:sa:${kubernetes_service_account.keycloak_provisioner.metadata[0].name}"
-
-      # 5. Create Keycloak Server Entry (so its istio-proxy can get an SVID)
-      $KUBECTL exec -n ${kubernetes_namespace.store_edge.metadata[0].name} spire-edge-server-0 -c spire-server -- \
-        /opt/spire/bin/spire-server entry create \
-        -parentID "$AGENT_ID" \
-        -spiffeID "spiffe://megamart.com/ns/${kubernetes_namespace.store_edge.metadata[0].name}/sa/keycloak" \
-        -selector "k8s:ns:${kubernetes_namespace.store_edge.metadata[0].name}" \
-        -selector "k8s:sa:keycloak"
-
-      # 6. Create WebApp Frontend Entry (uses default SA)
-      $KUBECTL exec -n ${kubernetes_namespace.store_edge.metadata[0].name} spire-edge-server-0 -c spire-server -- \
-        /opt/spire/bin/spire-server entry create \
-        -parentID "$AGENT_ID" \
-        -spiffeID "spiffe://megamart.com/ns/${kubernetes_namespace.store_apps.metadata[0].name}/sa/default" \
-        -selector "k8s:ns:${kubernetes_namespace.store_apps.metadata[0].name}" \
-        -selector "k8s:sa:default"
-
-      # 7. Create OIDC Discovery Provider Entry
-      $KUBECTL exec -n ${kubernetes_namespace.store_edge.metadata[0].name} spire-edge-server-0 -c spire-server -- \
-        /opt/spire/bin/spire-server entry create \
-        -parentID "$AGENT_ID" \
-        -spiffeID "spiffe://megamart.com/ns/${kubernetes_namespace.store_edge.metadata[0].name}/sa/${kubernetes_service_account.oidc_discovery.metadata[0].name}" \
-        -selector "k8s:ns:${kubernetes_namespace.store_edge.metadata[0].name}" \
-        -selector "k8s:sa:${kubernetes_service_account.oidc_discovery.metadata[0].name}"
-    EOT
-  }
-}
 
 # NOTE: The spire_bundle_reflector workaround is removed.
 # With SPIRE as Istio's unified CA (SPIFFE_ENDPOINT_SOCKET), the istio-agent
@@ -458,163 +462,165 @@ resource "kubernetes_config_map" "opa_config" {
   }
 }
 
-resource "helm_release" "keycloak" {
-  name       = "keycloak"
-  repository = "https://charts.bitnami.com/bitnami"
-  chart      = "keycloak"
-  version    = "21.4.2"
-  namespace  = kubernetes_namespace.store_edge.metadata[0].name
+#
+#resource "helm_release" "keycloak" {
+#  name       = "keycloak"
+#  repository = "https://charts.bitnami.com/bitnami"
+#  chart      = "keycloak"
+#  version    = "21.4.2"
+#  namespace  = kubernetes_namespace.store_edge.metadata[0].name
+#
+#  set {
+#    name  = "image.registry"
+#    value = "docker.io"
+#  }
+#  set {
+#    name  = "image.repository"
+#    value = "bitnamilegacy/keycloak"
+#  }
+#  set {
+#    name  = "postgresql.image.registry"
+#    value = "docker.io"
+#  }
+#  set {
+#    name  = "postgresql.image.repository"
+#    value = "bitnamilegacy/postgresql"
+#  }
+#  set {
+#    name  = "auth.adminUser"
+#    value = "admin"
+#  }
+#  set {
+#    name  = "auth.adminPassword"
+#    value = "megamart_secure_admin_pass"
+#  }
+#  set {
+#    name  = "postgresql.auth.password"
+#    value = "megamart_secure_db_pass"
+#  }
+#  set {
+#    name  = "service.type"
+#    value = "NodePort"
+#  }
+#  set {
+#    name  = "service.nodePorts.http"
+#    value = "30080"
+#  }
+#  set {
+#    name  = "extraEnvVars[0].name"
+#    value = "KC_FEATURES"
+#  }
+#  set {
+#    name  = "extraEnvVars[0].value"
+#    value = "token-exchange\\,admin-fine-grained-authz"
+#  }
+#}
+#
+#resource "kubernetes_service_account" "keycloak_provisioner" {
+#  metadata {
+#    name      = "keycloak-provisioner"
+#    namespace = kubernetes_namespace.store_edge.metadata[0].name
+#  }
+#}
+#
+## --- UNIFIED IDENTITY AUTHORITY: KEYCLOAK CONFIG ---
+## This section definitively anchors the Megamart identity realm.
+#
+#resource "keycloak_realm" "megamart_edge" {
+#  depends_on = [helm_release.keycloak]
+#  realm      = "megamart-edge"
+#  enabled    = true
+#}
+#
+#resource "keycloak_role" "store_associate" {
+#  realm_id = keycloak_realm.megamart_edge.id
+#  name     = "store-associate"
+#}
+#
+#resource "keycloak_role" "mcp_executor" {
+#  realm_id = keycloak_realm.megamart_edge.id
+#  name     = "mcp-executor"
+#}
+#
+## 1. Device Client (Human Login)
+#resource "keycloak_openid_client" "associate_device" {
+#  realm_id                     = keycloak_realm.megamart_edge.id
+#  client_id                    = "webapp-client" # Reconciled with top-level name
+#  name                         = "Store Associate Device WebApp"
+#  enabled                      = true
+#  access_type                  = "PUBLIC"
+#  standard_flow_enabled        = true
+#  direct_access_grants_enabled = true
+#  valid_redirect_uris          = ["http://localhost:30000/*"]
+#  web_origins                  = ["http://localhost:30000", "*"]
+#}
+#
+## 2. MCP Server (Resource Server)
+#resource "keycloak_openid_client" "mcp_server" {
+#  realm_id                     = keycloak_realm.megamart_edge.id
+#  client_id                    = "mcp-server"
+#  name                         = "MCP Server API"
+#  enabled                      = true
+#  access_type                  = "CONFIDENTIAL"
+#  service_accounts_enabled     = true
+#  full_scope_allowed           = false
+#}
+#
+## 3. AI Agent (Sovereign Executor)
+#resource "keycloak_openid_client" "ai_agent" {
+#  realm_id                     = keycloak_realm.megamart_edge.id
+#  client_id                    = "ai-agent"
+#  name                         = "AI Agent Backend"
+#  enabled                      = true
+#  access_type                  = "CONFIDENTIAL"
+#  service_accounts_enabled     = true
+#  client_authenticator_type    = "client-secret"
+#  client_secret               = "ai-agent-secret"
+#}
+#
+## 4. TOKEN EXCHANGE POLICY
+## resource "keycloak_openid_client_permissions" "mcp_server_perms" {
+##   realm_id  = keycloak_realm.megamart_edge.id
+##   client_id = keycloak_openid_client.mcp_server.id
+## 
+##   token_exchange_scope {
+##     decision_strategy = "UNANIMOUS"
+##     policies          = [keycloak_openid_client_client_policy.ai_agent_policy.id]
+##   }
+## }
+#
+## resource "keycloak_openid_client_client_policy" "ai_agent_policy" {
+##   realm_id           = keycloak_realm.megamart_edge.id
+##   resource_server_id = keycloak_openid_client.mcp_server.id
+##   name               = "ai-agent-exchange-policy"
+##   clients            = [keycloak_openid_client.ai_agent.id]
+##   decision_strategy  = "UNANIMOUS"
+##   logic              = "POSITIVE"
+## }
+#
+#resource "keycloak_user" "associate_user" {
+#  realm_id       = keycloak_realm.megamart_edge.id
+#  username       = "associate"
+#  enabled        = true
+#  email_verified = true
+#  initial_password {
+#    value     = "associate"
+#    temporary = false
+#  }
+#}
+#
+#resource "keycloak_user_roles" "associate_user_roles" {
+#  realm_id = keycloak_realm.megamart_edge.id
+#  user_id  = keycloak_user.associate_user.id
+#  role_ids = [keycloak_role.store_associate.id]
+#}
+#
+## resource "keycloak_user_roles" "ai_agent_sa_roles" {
+##   realm_id = keycloak_realm.megamart_edge.id
+##   user_id  = keycloak_openid_client.ai_agent.service_account_user_id
+##   role_ids = [keycloak_role.mcp_executor.id]
+## }
 
-  set {
-    name  = "image.registry"
-    value = "docker.io"
-  }
-  set {
-    name  = "image.repository"
-    value = "bitnamilegacy/keycloak"
-  }
-  set {
-    name  = "postgresql.image.registry"
-    value = "docker.io"
-  }
-  set {
-    name  = "postgresql.image.repository"
-    value = "bitnamilegacy/postgresql"
-  }
-  set {
-    name  = "auth.adminUser"
-    value = "admin"
-  }
-  set {
-    name  = "auth.adminPassword"
-    value = "megamart_secure_admin_pass"
-  }
-  set {
-    name  = "postgresql.auth.password"
-    value = "megamart_secure_db_pass"
-  }
-  set {
-    name  = "service.type"
-    value = "NodePort"
-  }
-  set {
-    name  = "service.nodePorts.http"
-    value = "30080"
-  }
-  set {
-    name  = "extraEnvVars[0].name"
-    value = "KC_FEATURES"
-  }
-  set {
-    name  = "extraEnvVars[0].value"
-    value = "token-exchange\\,admin-fine-grained-authz"
-  }
-}
-
-resource "kubernetes_service_account" "keycloak_provisioner" {
-  metadata {
-    name      = "keycloak-provisioner"
-    namespace = kubernetes_namespace.store_edge.metadata[0].name
-  }
-}
-
-# --- UNIFIED IDENTITY AUTHORITY: KEYCLOAK CONFIG ---
-# This section definitively anchors the Megamart identity realm.
-
-resource "keycloak_realm" "megamart_edge" {
-  depends_on = [helm_release.keycloak]
-  realm      = "megamart-edge"
-  enabled    = true
-}
-
-resource "keycloak_role" "store_associate" {
-  realm_id = keycloak_realm.megamart_edge.id
-  name     = "store-associate"
-}
-
-resource "keycloak_role" "mcp_executor" {
-  realm_id = keycloak_realm.megamart_edge.id
-  name     = "mcp-executor"
-}
-
-# 1. Device Client (Human Login)
-resource "keycloak_openid_client" "associate_device" {
-  realm_id                     = keycloak_realm.megamart_edge.id
-  client_id                    = "webapp-client" # Reconciled with top-level name
-  name                         = "Store Associate Device WebApp"
-  enabled                      = true
-  access_type                  = "PUBLIC"
-  standard_flow_enabled        = true
-  direct_access_grants_enabled = true
-  valid_redirect_uris          = ["http://localhost:30000/*"]
-  web_origins                  = ["http://localhost:30000", "*"]
-}
-
-# 2. MCP Server (Resource Server)
-resource "keycloak_openid_client" "mcp_server" {
-  realm_id                     = keycloak_realm.megamart_edge.id
-  client_id                    = "mcp-server"
-  name                         = "MCP Server API"
-  enabled                      = true
-  access_type                  = "CONFIDENTIAL"
-  service_accounts_enabled     = true
-  full_scope_allowed           = false
-}
-
-# 3. AI Agent (Sovereign Executor)
-resource "keycloak_openid_client" "ai_agent" {
-  realm_id                     = keycloak_realm.megamart_edge.id
-  client_id                    = "ai-agent"
-  name                         = "AI Agent Backend"
-  enabled                      = true
-  access_type                  = "CONFIDENTIAL"
-  service_accounts_enabled     = true
-  client_authenticator_type    = "client-secret"
-  client_secret               = "ai-agent-secret"
-}
-
-# 4. TOKEN EXCHANGE POLICY
-resource "keycloak_openid_client_permissions" "mcp_server_perms" {
-  realm_id  = keycloak_realm.megamart_edge.id
-  client_id = keycloak_openid_client.mcp_server.id
-
-  token_exchange_scope {
-    decision_strategy = "UNANIMOUS"
-    policies          = [keycloak_openid_client_client_policy.ai_agent_policy.id]
-  }
-}
-
-resource "keycloak_openid_client_client_policy" "ai_agent_policy" {
-  realm_id           = keycloak_realm.megamart_edge.id
-  resource_server_id = keycloak_openid_client.mcp_server.id
-  name               = "ai-agent-exchange-policy"
-  clients            = [keycloak_openid_client.ai_agent.id]
-  decision_strategy  = "UNANIMOUS"
-  logic              = "POSITIVE"
-}
-
-resource "keycloak_user" "associate_user" {
-  realm_id       = keycloak_realm.megamart_edge.id
-  username       = "associate"
-  enabled        = true
-  email_verified = true
-  initial_password {
-    value     = "associate"
-    temporary = false
-  }
-}
-
-resource "keycloak_user_roles" "associate_user_roles" {
-  realm_id = keycloak_realm.megamart_edge.id
-  user_id  = keycloak_user.associate_user.id
-  role_ids = [keycloak_role.store_associate.id]
-}
-
-resource "keycloak_user_roles" "ai_agent_sa_roles" {
-  realm_id = keycloak_realm.megamart_edge.id
-  user_id  = keycloak_openid_client.ai_agent.service_account_user_id
-  role_ids = [keycloak_role.mcp_executor.id]
-}
 
 # --- LEGACY BOOTSTRAP JOB REMOVED (REPLACED BY UNIFIED TERRAFORM) ---
 
@@ -626,6 +632,7 @@ resource "kubernetes_service_account" "ai_agent" {
 }
 
 resource "kubernetes_deployment" "ai_agent" {
+  depends_on = [null_resource.spire_trust_bundle_sync]
   metadata {
     name      = "ai-agent"
     namespace = kubernetes_namespace.store_apps.metadata[0].name
@@ -670,7 +677,7 @@ resource "kubernetes_deployment" "ai_agent" {
         volume {
           name = "spire-agent-socket"
           host_path {
-            path = "/run/spire/edge-sockets"
+            path = "/run/spire/sockets"
             type = "Directory"
           }
         }
@@ -709,6 +716,7 @@ resource "kubernetes_service_account" "mcp_server" {
 }
 
 resource "kubernetes_deployment" "mcp_server" {
+  depends_on = [null_resource.spire_trust_bundle_sync]
   metadata {
     name      = "mcp-server"
     namespace = kubernetes_namespace.store_apps.metadata[0].name
@@ -757,7 +765,7 @@ resource "kubernetes_deployment" "mcp_server" {
         volume {
           name = "spire-agent-socket"
           host_path {
-            path = "/run/spire/edge-sockets"
+            path = "/run/spire/sockets"
             type = "Directory"
           }
         }
@@ -787,6 +795,7 @@ resource "kubernetes_service" "mcp_server" {
 }
 
 resource "kubernetes_deployment" "webapp_frontend" {
+  depends_on = [null_resource.spire_trust_bundle_sync]
   metadata {
     name      = "webapp-frontend"
     namespace = kubernetes_namespace.store_apps.metadata[0].name
@@ -846,83 +855,105 @@ resource "kubernetes_manifest" "github_egress" {
     }
   }
 }
+#
+## 1. Allow both SVID and Plain-Text for Keycloak namespace (to support Browser login)
+#resource "kubernetes_manifest" "keycloak_peer_auth" {
+#  manifest = {
+#    apiVersion = "security.istio.io/v1beta1"
+#    kind       = "PeerAuthentication"
+#    metadata = {
+#      name      = "keycloak-permissive"
+#      namespace = kubernetes_namespace.store_edge.metadata[0].name
+#    }
+#    spec = {
+#      mtls = {
+#        mode = "PERMISSIVE"
+#      }
+#    }
+#  }
+#}
+#
+## 2. Enforce High-Clearance Identity for Token Exchange
+## resource "kubernetes_manifest" "keycloak_authz" {
+##   manifest = {
+##     apiVersion = "security.istio.io/v1beta1"
+##     kind       = "AuthorizationPolicy"
+##     metadata = {
+##       name      = "keycloak-split-path"
+##       namespace = kubernetes_namespace.store_edge.metadata[0].name
+##     }
+##     spec = {
+##       selector = {
+##         matchLabels = {
+##           "app.kubernetes.io/name" = "keycloak"
+##         }
+##       }
+##       # RULE 1: Allow Human Login (No SVID required for browser redirects)
+##       rules = [
+##         {
+##           to = [{
+##             operation = {
+##               paths = [
+##                 "/realms/*/protocol/*",
+##                 "/realms/*/.well-known/*",
+##                 "/resources/*"
+##               ]
+##             }
+##           }]
+##         },
+##         # RULE 2: STRICT Identity for SVID-based Token Exchange
+##         # Unified trust domain: SPIRE issues all certs as megamart.com
+##         # NOTE: Istio auto-prepends spiffe:// — principal must NOT include it
+##         {
+##           from = [{
+##             source = {
+##               principals = ["spiffe://megamart.com/ns/${kubernetes_namespace.store_apps.metadata[0].name}/sa/${kubernetes_service_account.ai_agent.metadata[0].name}"]
+##             }
+##           }]
+##           to = [{
+##             operation = {
+##               # Prefix match for token exchange
+##               paths = ["/realms/*/protocol/openid-connect/token*"]
+##             }
+##           }]
+##         },
+##         # RULE 3: Provisioner Identity
+##         {
+##           from = [{
+##             source = {
+##               principals = ["spiffe://megamart.com/ns/${kubernetes_namespace.store_edge.metadata[0].name}/sa/${kubernetes_service_account.keycloak_provisioner.metadata[0].name}"]
+##             }
+##           }]
+##           to = [{
+##             operation = {
+##               # Full access for the forging session
+##               paths = ["*"]
+##             }
+##           }]
+##         }
+##       ]
+##     }
+##   }
+## }
 
-# 1. Allow both SVID and Plain-Text for Keycloak namespace (to support Browser login)
-resource "kubernetes_manifest" "keycloak_peer_auth" {
+# --- BROWSER ACCESS: ALLOW PERMISSIVE MTLS FOR FRONTEND ---
+resource "kubernetes_manifest" "webapp_permissive_auth" {
   manifest = {
     apiVersion = "security.istio.io/v1beta1"
     kind       = "PeerAuthentication"
     metadata = {
-      name      = "keycloak-permissive"
-      namespace = kubernetes_namespace.store_edge.metadata[0].name
-    }
-    spec = {
-      mtls = {
-        mode = "PERMISSIVE"
-      }
-    }
-  }
-}
-
-# 2. Enforce High-Clearance Identity for Token Exchange
-resource "kubernetes_manifest" "keycloak_authz" {
-  manifest = {
-    apiVersion = "security.istio.io/v1beta1"
-    kind       = "AuthorizationPolicy"
-    metadata = {
-      name      = "keycloak-split-path"
-      namespace = kubernetes_namespace.store_edge.metadata[0].name
+      name      = "webapp-frontend-permissive"
+      namespace = kubernetes_namespace.store_apps.metadata[0].name
     }
     spec = {
       selector = {
         matchLabels = {
-          "app.kubernetes.io/name" = "keycloak"
+          app = "webapp-frontend"
         }
       }
-      # RULE 1: Allow Human Login (No SVID required for browser redirects)
-      rules = [
-        {
-          to = [{
-            operation = {
-              paths = [
-                "/realms/*/protocol/*",
-                "/realms/*/.well-known/*",
-                "/resources/*"
-              ]
-            }
-          }]
-        },
-        # RULE 2: STRICT Identity for SVID-based Token Exchange
-        # Unified trust domain: SPIRE issues all certs as megamart.com
-        # NOTE: Istio auto-prepends spiffe:// — principal must NOT include it
-        {
-          from = [{
-            source = {
-              principals = ["spiffe://megamart.com/ns/${kubernetes_namespace.store_apps.metadata[0].name}/sa/${kubernetes_service_account.ai_agent.metadata[0].name}"]
-            }
-          }]
-          to = [{
-            operation = {
-              # Prefix match for token exchange
-              paths = ["/realms/*/protocol/openid-connect/token*"]
-            }
-          }]
-        },
-        # RULE 3: Provisioner Identity
-        {
-          from = [{
-            source = {
-              principals = ["spiffe://megamart.com/ns/${kubernetes_namespace.store_edge.metadata[0].name}/sa/${kubernetes_service_account.keycloak_provisioner.metadata[0].name}"]
-            }
-          }]
-          to = [{
-            operation = {
-              # Full access for the forging session
-              paths = ["*"]
-            }
-          }]
-        }
-      ]
+      mtls = {
+        mode = "PERMISSIVE"
+      }
     }
   }
 }

@@ -30,15 +30,18 @@ resource "helm_release" "istiod" {
       trustDomain: "megamart.com"
       meshID: "megamart.com"
       multiCluster:
-        clusterName: "demo-cluster"
+        clusterName: "megamart-cluster"
+
+    pilot:
+      env:
+        PILOT_CERT_PROVIDER: "spire"
 
     meshConfig:
       trustDomain: "megamart.com"
       defaultConfig:
         proxyMetadata:
           # Tell every istio-agent to use the SPIRE Workload API for its cert.
-          # This path is mounted into every proxy by the "spire" template below.
-          SPIFFE_ENDPOINT_SOCKET: "unix:///run/spire/agent-sockets/spire-agent.sock"
+          SPIFFE_ENDPOINT_SOCKET: "unix:///run/spire/sockets/spire-agent.sock"
       extensionProviders:
         - name: "opa-ext-authz"
           envoyExtAuthzHttp:
@@ -51,8 +54,6 @@ resource "helm_release" "istiod" {
 
     sidecarInjectorWebhook:
       # Apply "sidecar" + "spire" templates to every injected pod.
-      # This means ALL workloads in labelled namespaces automatically get
-      # the SPIRE socket mounted — no per-pod annotation required.
       defaultTemplatesOverride: "sidecar,spire"
       templates:
         spire: |
@@ -66,10 +67,28 @@ resource "helm_release" "istiod" {
             volumes:
               - name: spire-agent-socket
                 hostPath:
-                  path: /run/spire/agent-sockets
+                  path: /run/spire/sockets
                   type: Directory
   YAML
   ]
+}
+
+# --- GLOBAL ZERO TRUST POLICY ---
+# Enforce STRICT mTLS across the entire trust domain using SPIFFE identities.
+resource "kubernetes_manifest" "global_mtls" {
+  manifest = {
+    apiVersion = "security.istio.io/v1beta1"
+    kind       = "PeerAuthentication"
+    metadata = {
+      name      = "default"
+      namespace = "istio-system"
+    }
+    spec = {
+      mtls = {
+        mode = "STRICT"
+      }
+    }
+  }
 }
 
 # Namespaces and injection labels are managed in main.tf
