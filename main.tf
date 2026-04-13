@@ -20,12 +20,12 @@ provider "helm" {
 }
 
 # The Identity Authority Provider (Assumes NodePort 30080)
-# provider "keycloak" {
-#   client_id = "admin-cli"
-#   url       = "http://localhost:30080"
-#   username  = "admin"
-#   password  = "megamart_secure_admin_pass"
-# }
+provider "keycloak" {
+  client_id = "admin-cli"
+  url       = "http://localhost:30080"
+  username  = "admin"
+  password  = "megamart_secure_admin_pass"
+}
 
 # ==========================================
 # STAGE 1: GLOBAL IDENTITY AUTHORITY (CLOUD)
@@ -468,120 +468,120 @@ resource "kubernetes_config_map" "opa_config" {
 }
 
 #
-#resource "helm_release" "keycloak" {
-#  name       = "keycloak"
-#  repository = "https://charts.bitnami.com/bitnami"
-#  chart      = "keycloak"
-#  version    = "21.4.2"
-#  namespace  = kubernetes_namespace.store_edge.metadata[0].name
+resource "helm_release" "keycloak" {
+  name       = "keycloak"
+  repository = "https://charts.bitnami.com/bitnami"
+  chart      = "keycloak"
+  version    = "21.4.2"
+  namespace  = kubernetes_namespace.store_edge.metadata[0].name
+
+  set {
+    name  = "image.registry"
+    value = "docker.io"
+  }
+  set {
+    name  = "image.repository"
+    value = "bitnamilegacy/keycloak"
+  }
+  set {
+    name  = "postgresql.image.registry"
+    value = "docker.io"
+  }
+  set {
+    name  = "postgresql.image.repository"
+    value = "bitnamilegacy/postgresql"
+  }
+  set {
+    name  = "auth.adminUser"
+    value = "admin"
+  }
+  set {
+    name  = "auth.adminPassword"
+    value = "megamart_secure_admin_pass"
+  }
+  set {
+    name  = "postgresql.auth.password"
+    value = "megamart_secure_db_pass"
+  }
+  set {
+    name  = "service.type"
+    value = "NodePort"
+  }
+  set {
+    name  = "service.nodePorts.http"
+    value = "30080"
+  }
+  set {
+    name  = "extraEnvVars[0].name"
+    value = "KC_FEATURES"
+  }
+  set {
+    name  = "extraEnvVars[0].value"
+    value = "token-exchange\\,admin-fine-grained-authz"
+  }
+}
 #
-#  set {
-#    name  = "image.registry"
-#    value = "docker.io"
-#  }
-#  set {
-#    name  = "image.repository"
-#    value = "bitnamilegacy/keycloak"
-#  }
-#  set {
-#    name  = "postgresql.image.registry"
-#    value = "docker.io"
-#  }
-#  set {
-#    name  = "postgresql.image.repository"
-#    value = "bitnamilegacy/postgresql"
-#  }
-#  set {
-#    name  = "auth.adminUser"
-#    value = "admin"
-#  }
-#  set {
-#    name  = "auth.adminPassword"
-#    value = "megamart_secure_admin_pass"
-#  }
-#  set {
-#    name  = "postgresql.auth.password"
-#    value = "megamart_secure_db_pass"
-#  }
-#  set {
-#    name  = "service.type"
-#    value = "NodePort"
-#  }
-#  set {
-#    name  = "service.nodePorts.http"
-#    value = "30080"
-#  }
-#  set {
-#    name  = "extraEnvVars[0].name"
-#    value = "KC_FEATURES"
-#  }
-#  set {
-#    name  = "extraEnvVars[0].value"
-#    value = "token-exchange\\,admin-fine-grained-authz"
-#  }
-#}
-#
-#resource "kubernetes_service_account" "keycloak_provisioner" {
-#  metadata {
-#    name      = "keycloak-provisioner"
-#    namespace = kubernetes_namespace.store_edge.metadata[0].name
-#  }
-#}
+resource "kubernetes_service_account" "keycloak_provisioner" {
+  metadata {
+    name      = "keycloak-provisioner"
+    namespace = kubernetes_namespace.store_edge.metadata[0].name
+  }
+}
 #
 ## --- UNIFIED IDENTITY AUTHORITY: KEYCLOAK CONFIG ---
 ## This section definitively anchors the Megamart identity realm.
 #
-#resource "keycloak_realm" "megamart_edge" {
-#  depends_on = [helm_release.keycloak]
-#  realm      = "megamart-edge"
-#  enabled    = true
-#}
+resource "keycloak_realm" "megamart_edge" {
+  depends_on = [helm_release.keycloak]
+  realm      = "megamart-edge"
+  enabled    = true
+}
 #
-#resource "keycloak_role" "store_associate" {
-#  realm_id = keycloak_realm.megamart_edge.id
-#  name     = "store-associate"
-#}
+resource "keycloak_role" "store_associate" {
+  realm_id = keycloak_realm.megamart_edge.id
+  name     = "store-associate"
+}
 #
-#resource "keycloak_role" "mcp_executor" {
-#  realm_id = keycloak_realm.megamart_edge.id
-#  name     = "mcp-executor"
-#}
+resource "keycloak_role" "mcp_executor" {
+  realm_id = keycloak_realm.megamart_edge.id
+  name     = "mcp-executor"
+}
 #
 ## 1. Device Client (Human Login)
-#resource "keycloak_openid_client" "associate_device" {
-#  realm_id                     = keycloak_realm.megamart_edge.id
-#  client_id                    = "webapp-client" # Reconciled with top-level name
-#  name                         = "Store Associate Device WebApp"
-#  enabled                      = true
-#  access_type                  = "PUBLIC"
-#  standard_flow_enabled        = true
-#  direct_access_grants_enabled = true
-#  valid_redirect_uris          = ["http://localhost:30000/*"]
-#  web_origins                  = ["http://localhost:30000", "*"]
-#}
+resource "keycloak_openid_client" "associate_device" {
+  realm_id                     = keycloak_realm.megamart_edge.id
+  client_id                    = "webapp-client" # Reconciled with top-level name
+  name                         = "Store Associate Device WebApp"
+  enabled                      = true
+  access_type                  = "PUBLIC"
+  standard_flow_enabled        = true
+  direct_access_grants_enabled = true
+  valid_redirect_uris          = ["http://localhost:30000/*"]
+  web_origins                  = ["http://localhost:30000", "*"]
+}
 #
 ## 2. MCP Server (Resource Server)
-#resource "keycloak_openid_client" "mcp_server" {
-#  realm_id                     = keycloak_realm.megamart_edge.id
-#  client_id                    = "mcp-server"
-#  name                         = "MCP Server API"
-#  enabled                      = true
-#  access_type                  = "CONFIDENTIAL"
-#  service_accounts_enabled     = true
-#  full_scope_allowed           = false
-#}
+resource "keycloak_openid_client" "mcp_server" {
+  realm_id                     = keycloak_realm.megamart_edge.id
+  client_id                    = "mcp-server"
+  name                         = "MCP Server API"
+  enabled                      = true
+  access_type                  = "CONFIDENTIAL"
+  service_accounts_enabled     = true
+  full_scope_allowed           = false
+}
 #
 ## 3. AI Agent (Sovereign Executor)
-#resource "keycloak_openid_client" "ai_agent" {
-#  realm_id                     = keycloak_realm.megamart_edge.id
-#  client_id                    = "ai-agent"
-#  name                         = "AI Agent Backend"
-#  enabled                      = true
-#  access_type                  = "CONFIDENTIAL"
-#  service_accounts_enabled     = true
-#  client_authenticator_type    = "client-secret"
-#  client_secret               = "ai-agent-secret"
-#}
+resource "keycloak_openid_client" "ai_agent" {
+  realm_id                     = keycloak_realm.megamart_edge.id
+  client_id                    = "ai-agent"
+  name                         = "AI Agent Backend"
+  enabled                      = true
+  access_type                  = "CONFIDENTIAL"
+  service_accounts_enabled     = true
+  client_authenticator_type    = "client-secret"
+  client_secret               = "ai-agent-secret"
+}
 #
 ## 4. TOKEN EXCHANGE POLICY
 ## resource "keycloak_openid_client_permissions" "mcp_server_perms" {
@@ -603,22 +603,22 @@ resource "kubernetes_config_map" "opa_config" {
 ##   logic              = "POSITIVE"
 ## }
 #
-#resource "keycloak_user" "associate_user" {
-#  realm_id       = keycloak_realm.megamart_edge.id
-#  username       = "associate"
-#  enabled        = true
-#  email_verified = true
-#  initial_password {
-#    value     = "associate"
-#    temporary = false
-#  }
-#}
+resource "keycloak_user" "associate_user" {
+  realm_id       = keycloak_realm.megamart_edge.id
+  username       = "associate"
+  enabled        = true
+  email_verified = true
+  initial_password {
+    value     = "associate"
+    temporary = false
+  }
+}
 #
-#resource "keycloak_user_roles" "associate_user_roles" {
-#  realm_id = keycloak_realm.megamart_edge.id
-#  user_id  = keycloak_user.associate_user.id
-#  role_ids = [keycloak_role.store_associate.id]
-#}
+resource "keycloak_user_roles" "associate_user_roles" {
+  realm_id = keycloak_realm.megamart_edge.id
+  user_id  = keycloak_user.associate_user.id
+  role_ids = [keycloak_role.store_associate.id]
+}
 #
 ## resource "keycloak_user_roles" "ai_agent_sa_roles" {
 ##   realm_id = keycloak_realm.megamart_edge.id
@@ -682,7 +682,7 @@ resource "kubernetes_deployment" "ai_agent" {
         volume {
           name = "spire-agent-socket"
           host_path {
-            path = "/run/spire/sockets"
+            path = "/run/spire/agent-sockets"
             type = "Directory"
           }
         }
@@ -770,7 +770,7 @@ resource "kubernetes_deployment" "mcp_server" {
         volume {
           name = "spire-agent-socket"
           host_path {
-            path = "/run/spire/sockets"
+            path = "/run/spire/agent-sockets"
             type = "Directory"
           }
         }

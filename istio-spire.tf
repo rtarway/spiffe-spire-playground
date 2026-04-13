@@ -35,7 +35,7 @@ resource "helm_release" "istiod" {
     pilot:
       env:
         PILOT_CERT_PROVIDER: "spire"
-        SPRIFFE_ENDPOINT_SOCKET: "unix:///run/spire/sockets/spire-agent.sock"
+        SPIFFE_ENDPOINT_SOCKET: "unix:///run/spire/sockets/spire-agent.sock"
       volumeMounts:
         - name: spire-agent-socket
           mountPath: /run/spire/sockets
@@ -43,7 +43,7 @@ resource "helm_release" "istiod" {
       volumes:
         - name: spire-agent-socket
           hostPath:
-            path: /run/spire/sockets
+            path: /run/spire/agent-sockets
             type: Directory
 
     meshConfig:
@@ -72,12 +72,12 @@ resource "helm_release" "istiod" {
               - name: istio-proxy
                 volumeMounts:
                   - name: spire-agent-socket
-                    mountPath: /run/spire/agent-sockets
+                    mountPath: /run/spire/sockets
                     readOnly: false
             volumes:
               - name: spire-agent-socket
                 hostPath:
-                  path: /run/spire/sockets
+                  path: /run/spire/agent-sockets
                   type: Directory
   YAML
   ]
