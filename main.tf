@@ -139,7 +139,9 @@ resource "kubernetes_namespace" "store_apps" {
   metadata {
     name = "megamart-store-apps"
     labels = {
-      "istio-injection" = "enabled"
+      # Istio 1.29 defaults to revision-based injection; the default revision is "default"
+      # and the injector webhook excludes namespaces that set the legacy istio-injection label.
+      "istio.io/rev" = "default"
     }
   }
 }
