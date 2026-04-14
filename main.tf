@@ -690,7 +690,12 @@ resource "kubernetes_deployment" "ai_agent" {
     replicas = 1
     selector { match_labels = { app = "ai-agent" } }
     template {
-      metadata { labels = { app = "ai-agent" } }
+      metadata {
+        labels = { app = "ai-agent" }
+        annotations = {
+          "inject.istio.io/templates" = "sidecar,spire"
+        }
+      }
       spec {
         service_account_name = kubernetes_service_account.ai_agent.metadata[0].name
         
@@ -774,7 +779,12 @@ resource "kubernetes_deployment" "mcp_server" {
     replicas = 1
     selector { match_labels = { app = "mcp-server" } }
     template {
-      metadata { labels = { app = "mcp-server" } }
+      metadata {
+        labels = { app = "mcp-server" }
+        annotations = {
+          "inject.istio.io/templates" = "sidecar,spire"
+        }
+      }
       spec {
         service_account_name = kubernetes_service_account.mcp_server.metadata[0].name
         
@@ -853,7 +863,12 @@ resource "kubernetes_deployment" "webapp_frontend" {
     replicas = 1
     selector { match_labels = { app = "webapp-frontend" } }
     template {
-      metadata { labels = { app = "webapp-frontend" } }
+      metadata {
+        labels = { app = "webapp-frontend" }
+        annotations = {
+          "inject.istio.io/templates" = "sidecar,spire"
+        }
+      }
       spec {
         container {
           name  = "webapp-frontend"
