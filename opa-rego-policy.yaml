@@ -18,10 +18,10 @@ data:
     }
 
     # 2. Extract and Validate SPIFFE ID from x-forwarded-client-cert
-    # Format: ...;URI=spiffe://megamart.com/ns/megamart-store-edge/sa/ai-agent;...
+    # Format: ...;URI=spiffe://megamart.com/ns/megamart-store-apps/sa/ai-agent;...
     validate_spiffe_id {
         xfcc := headers["x-forwarded-client-cert"]
-        contains(xfcc, "URI=spiffe://megamart.com/ns/megamart-store-edge/sa/ai-agent")
+        contains(xfcc, "URI=spiffe://megamart.com/ns/megamart-store-apps/sa/ai-agent")
     }
 
     # 3. Decode and validate the Token Claims

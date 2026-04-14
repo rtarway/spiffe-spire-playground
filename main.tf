@@ -511,14 +511,17 @@ resource "helm_release" "keycloak" {
     name  = "service.nodePorts.http"
     value = "30080"
   }
-  set {
-    name  = "extraEnvVars[0].name"
-    value = "KC_FEATURES"
-  }
-  set {
-    name  = "extraEnvVars[0].value"
-    value = "token-exchange\\,admin-fine-grained-authz"
-  }
+  values = [
+    yamlencode({
+      extraEnvVars = [
+        { name = "KC_FEATURES", value = "token-exchange,admin-fine-grained-authz" },
+        { name = "KC_HOSTNAME_STRICT", value = "false" },
+        { name = "KC_HOSTNAME_STRICT_HTTPS", value = "false" },
+        { name = "KC_HOSTNAME", value = "localhost" },
+        { name = "KC_HOSTNAME_PORT", value = "30080" }
+      ]
+    })
+  ]
 }
 #
 resource "kubernetes_service_account" "keycloak_provisioner" {
@@ -559,6 +562,16 @@ resource "keycloak_openid_client" "associate_device" {
   valid_redirect_uris          = ["http://localhost:30000/*"]
   web_origins                  = ["http://localhost:30000", "*"]
 }
+
+resource "keycloak_openid_audience_protocol_mapper" "ai_agent_audience_mapper" {
+  realm_id  = keycloak_realm.megamart_edge.id
+  client_id = keycloak_openid_client.associate_device.id
+  name      = "audience-mapper-ai-agent"
+
+  included_client_audience = "ai-agent"
+  add_to_id_token         = false
+  add_to_access_token     = true
+}
 #
 ## 2. MCP Server (Resource Server)
 resource "keycloak_openid_client" "mcp_server" {
@@ -569,6 +582,16 @@ resource "keycloak_openid_client" "mcp_server" {
   access_type                  = "CONFIDENTIAL"
   service_accounts_enabled     = true
   full_scope_allowed           = false
+  authorization {
+    policy_enforcement_mode = "ENFORCING"
+  }
+}
+
+resource "keycloak_openid_hardcoded_role_protocol_mapper" "mcp_executor_hardcoded" {
+  realm_id  = keycloak_realm.megamart_edge.id
+  client_id = keycloak_openid_client.mcp_server.id
+  name      = "hardcoded-mcp-executor"
+  role_id   = keycloak_role.mcp_executor.id
 }
 #
 ## 3. AI Agent (Sovereign Executor)
@@ -583,25 +606,35 @@ resource "keycloak_openid_client" "ai_agent" {
   client_secret               = "ai-agent-secret"
 }
 #
-## 4. TOKEN EXCHANGE POLICY
-## resource "keycloak_openid_client_permissions" "mcp_server_perms" {
-##   realm_id  = keycloak_realm.megamart_edge.id
-##   client_id = keycloak_openid_client.mcp_server.id
-## 
-##   token_exchange_scope {
-##     decision_strategy = "UNANIMOUS"
-##     policies          = [keycloak_openid_client_client_policy.ai_agent_policy.id]
-##   }
-## }
+# 4. TOKEN EXCHANGE POLICY
+resource "keycloak_openid_client_permissions" "mcp_server_perms" {
+  realm_id  = keycloak_realm.megamart_edge.id
+  client_id = keycloak_openid_client.mcp_server.id
+
+  token_exchange_scope {
+    decision_strategy = "UNANIMOUS"
+    policies          = [keycloak_openid_client_client_policy.ai_agent_policy.id]
+  }
+}
+
+resource "keycloak_openid_client_permissions" "associate_device_perms" {
+  realm_id  = keycloak_realm.megamart_edge.id
+  client_id = keycloak_openid_client.associate_device.id
+
+  token_exchange_scope {
+    decision_strategy = "UNANIMOUS"
+    policies          = [keycloak_openid_client_client_policy.ai_agent_policy.id]
+  }
+}
 #
-## resource "keycloak_openid_client_client_policy" "ai_agent_policy" {
-##   realm_id           = keycloak_realm.megamart_edge.id
-##   resource_server_id = keycloak_openid_client.mcp_server.id
-##   name               = "ai-agent-exchange-policy"
-##   clients            = [keycloak_openid_client.ai_agent.id]
-##   decision_strategy  = "UNANIMOUS"
-##   logic              = "POSITIVE"
-## }
+resource "keycloak_openid_client_client_policy" "ai_agent_policy" {
+  realm_id           = keycloak_realm.megamart_edge.id
+  resource_server_id = keycloak_openid_client.mcp_server.id
+  name               = "ai-agent-exchange-policy"
+  clients            = [keycloak_openid_client.ai_agent.id]
+  decision_strategy  = "UNANIMOUS"
+  logic              = "POSITIVE"
+}
 #
 resource "keycloak_user" "associate_user" {
   realm_id       = keycloak_realm.megamart_edge.id
@@ -609,8 +642,11 @@ resource "keycloak_user" "associate_user" {
   enabled          = true
   email_verified   = true
   required_actions = []
+  first_name     = "Store"
+  last_name      = "Associate"
+  email          = "associate@megamart.com"
   initial_password {
-    value     = "associate"
+    value     = "password"
     temporary = false
   }
 }
@@ -618,14 +654,17 @@ resource "keycloak_user" "associate_user" {
 resource "keycloak_user_roles" "associate_user_roles" {
   realm_id = keycloak_realm.megamart_edge.id
   user_id  = keycloak_user.associate_user.id
-  role_ids = [keycloak_role.store_associate.id]
+  role_ids = [
+    keycloak_role.store_associate.id,
+    keycloak_role.mcp_executor.id
+  ]
 }
 #
-## resource "keycloak_user_roles" "ai_agent_sa_roles" {
-##   realm_id = keycloak_realm.megamart_edge.id
-##   user_id  = keycloak_openid_client.ai_agent.service_account_user_id
-##   role_ids = [keycloak_role.mcp_executor.id]
-## }
+resource "keycloak_user_roles" "ai_agent_sa_roles" {
+  realm_id = keycloak_realm.megamart_edge.id
+  user_id  = keycloak_openid_client.ai_agent.service_account_user_id
+  role_ids = [keycloak_role.mcp_executor.id]
+}
 
 
 # --- LEGACY BOOTSTRAP JOB REMOVED (REPLACED BY UNIFIED TERRAFORM) ---

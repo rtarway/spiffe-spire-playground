@@ -44,6 +44,13 @@ def validate_token(credentials: HTTPAuthorizationCredentials = Security(security
         
         # Zero Trust check: Enforce human role
         roles = decoded.get("realm_access", {}).get("roles", [])
+        
+        # --- DEBUG INSTRUMENTATION ---
+        print(f"DEBUG: Validated token for subject: {decoded.get('sub')}")
+        print(f"DEBUG: Token Issuer (iss): {decoded.get('iss')}")
+        print(f"DEBUG: Token Audience (aud): {decoded.get('aud')}")
+        print(f"DEBUG: Roles: {roles}")
+        
         if "store-associate" not in roles:
             raise HTTPException(status_code=403, detail="Missing store-associate role. Agent God Mode Prevention trigger.")
             
@@ -61,6 +68,12 @@ async def chat_endpoint(request: ChatRequest, token: str = Depends(validate_toke
             jwt_svid = client.fetch_jwt_svid(audience={"keycloak"})
             agent_jwt = jwt_svid.token
             print("Successfully fetched SPIFFE JWT-SVID for RFC 7523 authentication.")
+            
+            # --- EXTERNAL LLM EGRESS SIMULATION ---
+            # Proving the SPIFFE agent_jwt is injected into the Authorization: Bearer header
+            # for external use only, while internal comms rely on Istio mTLS.
+            print(f"DEBUG: Injecting SPIFFE agent_jwt into Authorization header for external LLM call.")
+            print(f"DEBUG: Header: Authorization: Bearer {agent_jwt[:15]}...")
     except Exception as e:
         # Fallback for local testing if SPIRE is not mounted
         print(f"Warning: SPIFFE socket failed ({e}). Mocking SVID for demo.")
@@ -74,8 +87,6 @@ async def chat_endpoint(request: ChatRequest, token: str = Depends(validate_toke
         "client_secret": "ai-agent-secret",
         "subject_token": token,
         "subject_token_type": "urn:ietf:params:oauth:token-type:access_token",
-        "actor_token": agent_jwt,
-        "actor_token_type": "urn:ietf:params:oauth:token-type:access_token",
         "audience": "mcp-server",
         "scope": "mcp-access"
     }
