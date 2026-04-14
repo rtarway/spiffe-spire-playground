@@ -550,7 +550,7 @@ resource "keycloak_role" "mcp_executor" {
 ## 1. Device Client (Human Login)
 resource "keycloak_openid_client" "associate_device" {
   realm_id                     = keycloak_realm.megamart_edge.id
-  client_id                    = "webapp-client" # Reconciled with top-level name
+  client_id                    = "associate-device" # Reconciled with frontend expectation
   name                         = "Store Associate Device WebApp"
   enabled                      = true
   access_type                  = "PUBLIC"
@@ -605,9 +605,10 @@ resource "keycloak_openid_client" "ai_agent" {
 #
 resource "keycloak_user" "associate_user" {
   realm_id       = keycloak_realm.megamart_edge.id
-  username       = "associate"
-  enabled        = true
-  email_verified = true
+  username       = "store-associate-user"
+  enabled          = true
+  email_verified   = true
+  required_actions = []
   initial_password {
     value     = "associate"
     temporary = false
