@@ -13,121 +13,114 @@ The current setup achieves a **Zero-Trust Sovereign Identity Fabric**, where ide
 - **Enforcement (Layer 3)**: Envoy sidecars (mTLS) + OPA sidecars (ABAC/JWT validation).
 
 ### The Handshake Workflow
-1. **Frontend**: The WebApp obtains a JWT from Keycloak (Audience: `ai-agent`).
-2. **AI Agent**: The Agent retrieves its SPIFFE SVID from the local SPIRE Agent and uses it for mTLS communication.
-3. **Token Exchange**: The Agent performs an RFC 8693 exchange at Keycloak, swapping the human token for a down-scoped `mcp-server` token (Role: `mcp-executor`).
-4. **Enforcement**: The MCP Server receives the request through Envoy (validating mTLS) and OPA (validating the JWT roles and SPIFFE provenance).
+1. **Frontend**: The WebApp obtains a human-scoped JWT from Keycloak (Audience: `ai-agent`).
+2. **AI Agent**: The Agent retrieves its SPIFFE SVID from the local SPIRE Agent and uses it for strict mTLS communication.
+3. **Token Exchange**: The Agent performs an RFC 8693 token exchange at Keycloak, swapping the human token for a down-scoped `mcp-server` token (Role: `mcp-executor`).
+4. **Enforcement**: The MCP Server receives the request through Envoy (validating the mTLS transport) and OPA (validating the JWT roles and SPIFFE provenance).
 
----
-
-## 2. The Gotchas: Hardened Lessons
-
-| Category | Gotcha | Root Cause | Final Correction |
-| :--- | :--- | :--- | :--- |
-| **Issuer** | **"Split-Brain" Issuer** | Tokens issued vs `localhost` but validated vs cluster-internal DNS failed signature check. | Pinned `KC_HOSTNAME=localhost` to ensure consistency. |
-| **Trust** | **Missing Audience** | Frontend tokens lacked the `aud` claim, causing Keycloak to reject exchange requests. | Added `keycloak_openid_audience_protocol_mapper` to the issuing client. |
-| **RBAC** | **Token Exchange Symmetry** | Permission was only granted on the target client, but RFC 8693 requires it on the issuing client too. | Added `keycloak_openid_client_permissions` to the `associate-device` client. |
-| **OPA** | **Namespace Mismatch** | Rego policy checked `megamart-store-edge` namespace, but Agent was in `megamart-store-apps`. | Updated SPIFFE ID check in OPA to reflect actual app namespace. |
-| **Istio** | **Nested Identity Paradox** | Istiod deadlocking while trying to find its own identity before starting the mesh. | Surgically injected persistent SPIRE socket mounts via `hostPath`. |
-
----
-
-## 3. Architecture Diagram: Sovereign Edge AI
-
-```mermaid
-sequenceDiagram
-    participant AG as AI Agent
-    participant AE as Envoy (Agent Sidecar)
-    participant ME as Envoy (MCP Sidecar)
-    participant OPA as OPA Sidecar
-    participant MCP as MCP Server Core
-
-    Note over AG, AE: Outbound (mTLS)
-    AG->>AE: 1. Request + JWT (User)
-    AE->>ME: 2. mTLS Handshake (X.509 SVID) + JWT
-    
-    Note over ME, OPA: Inbound AuthZ Flow
-    ME->>OPA: 3a. ExtAuthz Check (gRPC)
-    Note right of OPA: Validates SPIFFE ID (mTLS)<br/>Validates JWT Role (OBO)
-    OPA-->>ME: 3b. Decision: Allow (200 OK)
-    
-    Note over ME, MCP: Local Forward
-    ME->>MCP: 4. Forward Request with User Identity
-    MCP-->>AG: 5. Return Order List
-```
-
-### Physical Topology: Sidecar Attachment
+### Visual Architecture
 
 ```mermaid
 graph TD
-    subgraph "Pod: AI Agent"
-        Agent[Workload: AI Agent]
-        AE[Sidecar: Envoy]
+    subgraph "Megamart Store Edge (Offline Capable)"
+        
+        subgraph "Layer 0: Trust Fabric"
+            SA[SPIRE Agent]
+            SS[SPIRE Edge Server]
+            SS -- "PSAT Attestation" --> Cloud[SPIRE Cloud Server]
+        end
+
+        subgraph "Layer 2: Identity"
+            KC[Keycloak Edge]
+        end
+
+        subgraph "Layer 1 & 3: Mesh & Enforcement"
+            WA[WebApp Frontend]
+            AI[AI Agent]
+            MCP[MCP Server]
+            OPA[OPA Sidecar]
+            
+            WA -- "1. Human JWT" --> AI
+            AI -- "2. Token Exchange (mTLS)" --> KC
+            AI -- "3. Exchanged JWT (mTLS)" --> MCP
+            MCP -. "4. Validate Claims" .-> OPA
+        end
+        
+        SA -. "Mounts spire-agent.sock" .-> WA
+        SA -. "Mounts spire-agent.sock" .-> AI
+        SA -. "Mounts spire-agent.sock" .-> MCP
+        SA -. "Mounts spire-agent.sock" .-> KC
     end
-
-    subgraph "Pod: MCP Server"
-        MCP[Workload: MCP Server]
-        ME[Sidecar: Envoy]
-        OPA[Sidecar: OPA]
-    end
-
-    subgraph "Layer 0: Identity Basis"
-        SPIRE[SPIRE Agent]
-    end
-
-    %% SDS Flow
-    AE -- "SDS (SVID)" --> SPIRE
-    ME -- "SDS (SVID)" --> SPIRE
-
-    %% Request Flow
-    Agent --> AE
-    AE -- "mTLS + JWT" --> ME
-    ME -- "ExtAuthz Check" --> OPA
-    ME -- "Authorized Flow" --> MCP
 ```
 
 ---
 
-## 4. Key Integration Pillars
+## 2. The "Gotchas" (Why It Kept Breaking)
 
-### Istio-SPIRE Integration
-*   **Socket-First**: Mount `/run/spire/sockets/spire-agent.sock` as a `hostPath` volume in all pods.
-*   **Custom CA**: Configure Istiod with `PILOT_CERT_PROVIDER: "spire"` to disable Citadel and use SPIRE as the intermediate.
-*   **Discovery Alignment**: Ensure the `trust_domain` (e.g., `megamart.com`) stays consistent across the hierarchy.
+### The Bootstrap Paradox (Nested Identity)
+**The Bug**: The `spire-edge-agent` was caught in a `CrashLoopBackOff`, causing all application sidecars to hang in `Init:0/2`.
+**The Reality**: Helm deployed a stale `spire-bundle` for the agent. When the Edge Server got its new Cloud-signed identity, the Agent rejected it because its local bundle didn't know about the Cloud CA.
+**The Fix**: Implemented the **Bundle Bridge**. We wrote a Terraform provisioner to extract the root trust bundle from the Cloud Server and forcefully inject it into the Edge namespace *before* the Agent boots.
 
-### Keycloak Token Exchange Setup
-*   **Authorization Services**: Must be enabled on the **Target Client** (`mcp-server`).
-*   **Permissions**: Create a policy for the **Caller Client** (`ai-agent`) and apply it to the `token-exchange` scope on BOTH the Issuing and Target clients.
-*   **OBO Logic**: Use the `subject_token` parameter for On-Behalf-Of flows, ensuring the `aud` claim matches the caller.
+### The OIDC Helm Abstraction Barrier
+**The Bug**: OIDC Discovery was failing because the pod couldn't mount our custom socket path (`/run/spire/agent-sockets`).
+**The Reality**: The SPIRE Helm chart hardcoded the `volumeMounts` for the OIDC provider, preventing us from overriding the paths via simple Helm values.
+**The Fix**: **Direct Manifest Injection**. We disabled the Helm-managed OIDC provider and deployed it natively using a Terraform `kubernetes_deployment`, giving us absolute control over the host paths.
+
+### The Double-Wrapping JWT Trap
+**The Bug**: We tried passing a SPIFFE JWT as an `actor_token` inside the Keycloak token exchange payload.
+**The Reality**: Keycloak rejected it (`invalid_token`) because we were "double-wrapping." We had not federated SPIRE as an external Identity Provider in Keycloak.
+**The Fix**: We stripped the JWT from the Keycloak payload and now rely exclusively on Istio's mTLS (which already authenticates the SPIFFE machine identity via X.509) for the internal Keycloak call. The SPIFFE JWT is reserved entirely for external egress (e.g., calling external LLM providers).
+**The Nuance (Why OIDC Discovery is Still Running)**: Even though mTLS handles internal app-to-app transport, the Native SPIFFE OIDC Discovery Provider remains critical. It ensures that OPA, external APIs, and eventually Keycloak (if fully federated) can cryptographically validate the signatures of any SPIFFE JWTs used for granular claim checks or external egress outside the boundaries of the mesh.
 
 ---
 
-## 5. OPA & Adaptive Authorization
+## 3. The "Split-Personality" Ingress
 
-### Current Validation Logic
-1.  **Transport Validation**: Envoy checks for a valid mTLS cert (SPIFFE SVID).
-2.  **Identity Attribution**: OPA extracts the SPIFFE ID from `X-Forwarded-Client-Cert` to verify it's the `ai-agent`.
-3.  **Role Guardrails**: OPA confirms the JWT role is `mcp-executor` and **Blacklists** `store-associate` to prevent escalation.
+**The Problem**: Human browsers (laptops, phones) cannot participate in SPIRE mTLS because they don't have a local Workload API or an SVID. If the mesh is universally `STRICT`, humans are locked out.
+**The Solution**: We applied an Istio `PeerAuthentication` policy to Keycloak and the WebApp frontend set to `PERMISSIVE`. 
+- **Browser -> WebApp**: Standard HTTP/TLS.
+- **WebApp -> Keycloak (Backend)**: STRICT mTLS.
+- **WebApp -> AI Agent**: STRICT mTLS.
 
-### Enhancing for "Adaptive Authorization"
-To move beyond static roles, OPA can be updated to:
-*   **Contextual Checks**: Validate the store's "Operational State" (e.g., allow `mcp-executor` only during store hours).
-*   **Hardware Attestation**: OPA can verify hardware-rooted claims from SPIRE (TPM-backed) to ensure the agent is running on tampered-proof hardware.
-*   **Anomaly detection**: Compare the frequency of MCP calls against a baseline and throttle in Rego.
+---
+
+## 4. Cloud-Outage Edge Survival (The Offline Store)
+
+**The Problem**: A standard nested SPIRE topology relies on short-lived intermediate certificates. If the Cloud goes down, the Edge Server stops issuing certs within hours, taking the store down with it.
+**The Architecture**: We extended the SPIRE CA TTL to `336h` (14 days) on both Cloud and Edge servers. 
+**The Local Topology**: Because Keycloak and its PostgreSQL database replica are deployed locally within the `megamart-store-edge` namespace alongside the apps, the entire AuthZ/AuthN pipeline can execute locally without reaching back to the cloud.
+**The Result**: If the store loses internet connection, the Edge Server can continue to mint and rotate SVIDs for local workloads, and Keycloak can continue to exchange tokens locally, for up to two weeks completely autonomously.
+
+---
+
+## 5. Future Engineering: Beyond the MVP
+
+To take this from a playground to a production-grade 16,000-store rollout, the following architectural additions are recommended:
+
+### Federated Trust Domains (SPIRE Federation)
+Instead of a single `megamart.com` trust domain, implement independent domains (e.g., `store001.megamart.local`) that federate with the Cloud. This prevents a compromised store from impersonating another store.
+
+### Automated Policy Distribution (GitOps)
+Currently, OPA policies are pulled via an init container or static ConfigMap. We need to implement a sync agent (like `kube-mgmt` or Flux) to push `policy.rego` updates directly to the edge nodes in real-time.
+
+### Advanced OPA Rules
+* **Hardware Attestation**: OPA can verify hardware-rooted claims from SPIRE (TPM-backed) to ensure the agent is running on tampered-proof hardware.
+* **Anomaly detection**: Compare the frequency of MCP calls against a baseline and throttle in Rego.
 
 ---
 
 ## 6. Application Developer Perspective
 
 ### Current Coding Requirements
-*   **SPIFFE Fetching**: Apps currently use `pyspiffe` or similar to fetch SVIDs manually for any logic requiring JWT-SVID generation (e.g., external LLM calls).
-*   **Exchange Dance**: Developers must write the boilerplate `httpx` logic to handle the RFC 8693 payload and secret management.
+* **SPIFFE Fetching**: Apps currently use `pyspiffe` or similar to fetch SVIDs manually for any logic requiring JWT-SVID generation (e.g., external LLM calls).
+* **Exchange Dance**: Developers must write the boilerplate `httpx` logic to handle the RFC 8693 payload and secret management.
 
 ### The "Identity Proxy" Sidecar Proposal
-We can eliminate developer complexity by creating a **Reusable Identity Sidecar** (e.g., an Envoy-based Filter or a dedicated Go-Proxy):
-1.  **Auto-Exchange**: The app sends a standard Auth header; the sidecar intercepts it, performs the SPIFFE-backed exchange, and forwards the "shredded" token to the target.
+We can eliminate developer complexity by creating a **Reusable Identity Sidecar**. This could be implemented by leveraging Envoy's native `ext_authz` filter, a lightweight reverse-proxy like OAuth2-Proxy, or a custom Go binary:
+1.  **Auto-Exchange**: The application sends a standard Authorization header; the sidecar intercepts it, performs the SPIFFE-backed exchange with Keycloak, and forwards the "shredded" down-scoped token to the target.
 2.  **Token Refresh**: The sidecar handles expiry and re-polling of the identity substrate.
-3.  **App Impact**: Developers simply write code against `localhost:SIDE-CAR-PORT`, making the infrastructure entirely invisible to the business logic.
+3.  **App Impact**: Developers simply write code against `localhost:SIDE-CAR-PORT`, making the complex identity infrastructure entirely invisible to the business logic.
 
 > [!IMPORTANT]
 > This architecture ensures that even in an **Offline Scenario**, the Store-Edge can maintain its trust domain. The Edge Server caches its intermediate CA from Cloud, allowing the AI fleet to operate locally without a round-trip to the internet for identity validation.
