@@ -29,6 +29,14 @@ resource "helm_release" "istiod" {
       hub: "docker.io/istio"
       trustDomain: "megamart.com"
       meshID: "megamart.com"
+      # Istio templates also inject `PILOT_CERT_PROVIDER` from this value for gateways/proxies.
+      # If this stays at the default ("istiod"), but you intended SPIRE for the data plane only,
+      # you can end up with duplicate/conflicting env vars unless this matches your intended provider.
+      #
+      # For this playground, keep the Istio control plane + webhook serving certs on the built-in
+      # Istio CA (from `istio-ca-secret`), while data-plane identity still comes from SPIRE via
+      # `meshConfig.defaultConfig.proxyMetadata.SPIFFE_ENDPOINT_SOCKET` below.
+      pilotCertProvider: "istiod"
       multiCluster:
         clusterName: "megamart-cluster"
 
