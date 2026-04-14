@@ -34,8 +34,11 @@ resource "helm_release" "istiod" {
 
     pilot:
       env:
-        PILOT_CERT_PROVIDER: "spire"
-        SPIFFE_ENDPOINT_SOCKET: "unix:///run/spire/sockets/spire-agent.sock"
+        # NOTE: Istio 1.29 does not implement a "spire" cert provider for istiod itself.
+        # Keeping this set breaks the injector webhook TLS server ("cert not initialized"),
+        # which prevents *any* sidecar injection. We keep SPIRE integration limited to
+        # data-plane proxies via SPIFFE_ENDPOINT_SOCKET metadata (below) for now.
+        PILOT_CERT_PROVIDER: "istiod"
       volumeMounts:
         - name: spire-agent-socket
           mountPath: /run/spire/sockets
