@@ -41,12 +41,6 @@ resource "helm_release" "istiod" {
         clusterName: "megamart-cluster"
 
     pilot:
-      env:
-        # NOTE: Istio 1.29 does not implement a "spire" cert provider for istiod itself.
-        # Keeping this set breaks the injector webhook TLS server ("cert not initialized"),
-        # which prevents *any* sidecar injection. We keep SPIRE integration limited to
-        # data-plane proxies via SPIFFE_ENDPOINT_SOCKET metadata (below) for now.
-        PILOT_CERT_PROVIDER: "istiod"
       volumeMounts:
         - name: spire-agent-socket
           mountPath: /run/spire/sockets
