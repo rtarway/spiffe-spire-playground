@@ -469,6 +469,7 @@ resource "kubernetes_config_map" "opa_config" {
 
 #
 resource "helm_release" "keycloak" {
+  depends_on = [helm_release.istiod]
   name       = "keycloak"
   repository = "https://charts.bitnami.com/bitnami"
   chart      = "keycloak"
@@ -677,7 +678,7 @@ resource "kubernetes_service_account" "ai_agent" {
 }
 
 resource "kubernetes_deployment" "ai_agent" {
-  depends_on = [null_resource.spire_trust_bundle_sync]
+  depends_on = [helm_release.istiod, null_resource.spire_trust_bundle_sync]
   metadata {
     name      = "ai-agent"
     namespace = kubernetes_namespace.store_apps.metadata[0].name
@@ -761,7 +762,7 @@ resource "kubernetes_service_account" "mcp_server" {
 }
 
 resource "kubernetes_deployment" "mcp_server" {
-  depends_on = [null_resource.spire_trust_bundle_sync]
+  depends_on = [helm_release.istiod, null_resource.spire_trust_bundle_sync]
   metadata {
     name      = "mcp-server"
     namespace = kubernetes_namespace.store_apps.metadata[0].name
@@ -840,7 +841,7 @@ resource "kubernetes_service" "mcp_server" {
 }
 
 resource "kubernetes_deployment" "webapp_frontend" {
-  depends_on = [null_resource.spire_trust_bundle_sync]
+  depends_on = [helm_release.istiod, null_resource.spire_trust_bundle_sync]
   metadata {
     name      = "webapp-frontend"
     namespace = kubernetes_namespace.store_apps.metadata[0].name

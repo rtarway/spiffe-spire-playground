@@ -22,7 +22,7 @@ resource "helm_release" "istiod" {
   repository = "https://istio-release.storage.googleapis.com/charts"
   chart      = "istiod"
   namespace  = kubernetes_namespace.istio_system.metadata[0].name
-  depends_on = [helm_release.istio_base]
+  depends_on = [helm_release.istio_base, null_resource.spire_trust_bundle_sync]
 
   values = [<<-YAML
     global:
@@ -64,7 +64,7 @@ resource "helm_release" "istiod" {
 
     sidecarInjectorWebhook:
       # Apply "sidecar" + "spire" templates to every injected pod.
-      defaultTemplatesOverride: "sidecar,spire"
+      defaultTemplates: ["sidecar", "spire"]
       templates:
         spire: |
           spec:
@@ -102,3 +102,5 @@ resource "kubernetes_manifest" "global_mtls" {
 }
 
 # Namespaces and injection labels are managed in main.tf
+
+# Note: istiod registration should be handled by the Registrar or a separate out-of-band process if the provider is unavailable.
