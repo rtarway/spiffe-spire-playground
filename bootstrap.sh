@@ -1,51 +1,92 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # =============================================================================
-# 🚀 Sovereign Identity Mesh: Unified Bootstrap Script
+# Sovereign Identity Mesh — cluster bootstrap
 # =============================================================================
-# This script orchestrates the end-to-end setup of the zero-trust identity 
-# fabric on a fresh Rancher Desktop environment.
-# 
-# Phases:
-# 1. Environment Validation
-# 2. Local Container Construction (The Forge)
-# 3. Infrastructure Manifestation (Terraform)
+# Deploys the full stack (SPIRE cloud + edge, Istio, Keycloak, OPA, apps) onto
+# a fresh Kubernetes cluster using Terraform. Tested with Rancher Desktop;
+# any cluster with a compatible kubectl context works if you set KUBE_CONTEXT.
+#
+# Prerequisites:
+#   - Docker (for building local images; Rancher Desktop provides this)
+#   - kubectl configured for your cluster
+#   - terraform >= 1.x
+#
+# Optional environment:
+#   KUBE_CONTEXT   kubectl context (default: rancher-desktop)
+#   KUBECONFIG     path to kubeconfig (default: ~/.kube/config via Terraform)
+#   TF_VAR_keycloak_url  Keycloak URL for Terraform Keycloak provider
+#                        (default: http://localhost:30080 — correct for NodePort on localhost)
 # =============================================================================
 
-set -e
+set -euo pipefail
 
-# PATH Configuration for Rancher Desktop and Local Tools
-export PATH="/Users/rtarway/.rd/bin:/usr/local/bin:$PATH"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-echo "🌟 Initializing Sovereign Edge Bootstrap..."
+# Prefer common tool locations (Rancher Desktop, Homebrew) without hardcoding a single user path.
+for _d in "${HOME}/.rd/bin" "/usr/local/bin" "/opt/homebrew/bin"; do
+  if [[ -d "${_d}" ]]; then
+    PATH="${_d}:${PATH}"
+  fi
+done
+export PATH
 
-# --- Phase 1: Environment Validation ---
-echo "🔍 Checking dependencies..."
-command -v docker >/dev/null 2>&1 || { echo >&2 "❌ Docker is required but not found. Please start Rancher Desktop."; exit 1; }
-command -v kubectl >/dev/null 2>&1 || { echo >&2 "❌ Kubectl is required but not found."; exit 1; }
-command -v terraform >/dev/null 2>&1 || { echo >&2 "❌ Terraform is required but not found."; exit 1; }
+echo "Initializing Sovereign Edge bootstrap..."
 
-# --- Phase 2: Local Container Construction ---
-echo "🏗️  Phase 1/2: Building Local Container Images..."
-if [ -f "./build_images.sh" ]; then
-    chmod +x ./build_images.sh
-    ./build_images.sh
-else
-    echo "❌ build_images.sh not found!"
-    exit 1
+# --- Phase 1: Tooling ---
+echo "Checking dependencies..."
+command -v docker >/dev/null 2>&1 || {
+  echo "Docker is required (start Rancher Desktop or Docker Desktop)." >&2
+  exit 1
+}
+command -v kubectl >/dev/null 2>&1 || {
+  echo "kubectl not found in PATH." >&2
+  exit 1
+}
+command -v terraform >/dev/null 2>&1 || {
+  echo "terraform not found in PATH." >&2
+  exit 1
+}
+
+# --- Phase 2: Kubernetes context ---
+export KUBE_CONTEXT="${KUBE_CONTEXT:-rancher-desktop}"
+export TF_VAR_kube_context="${TF_VAR_kube_context:-$KUBE_CONTEXT}"
+
+if [[ -n "${KUBECONFIG:-}" ]]; then
+  export TF_VAR_kubeconfig_path="${TF_VAR_kubeconfig_path:-$KUBECONFIG}"
 fi
 
-# --- Phase 3: Infrastructure Manifestation ---
-echo "⚙️  Phase 2/2: Manifesting Sovereign Infrastructure..."
-echo "📡 Initializing Terraform..."
-terraform init
+echo "Using kubectl context: ${TF_VAR_kube_context}"
+if ! kubectl config get-contexts "${TF_VAR_kube_context}" >/dev/null 2>&1; then
+  echo "Context '${TF_VAR_kube_context}' not found. Create it or set KUBE_CONTEXT." >&2
+  kubectl config get-contexts || true
+  exit 1
+fi
 
-echo "💎 Applying Infrastructure State..."
+echo "Verifying cluster connectivity..."
+kubectl --context "${TF_VAR_kube_context}" cluster-info >/dev/null
+kubectl --context "${TF_VAR_kube_context}" wait --for=condition=Ready nodes --all --timeout=120s >/dev/null
+
+# --- Phase 3: Local images (imagePullPolicy: Never on workloads) ---
+echo "Phase 1/2: Building local container images..."
+if [[ -f ./build_images.sh ]]; then
+  chmod +x ./build_images.sh
+  ./build_images.sh
+else
+  echo "build_images.sh not found." >&2
+  exit 1
+fi
+
+# --- Phase 4: Terraform ---
+echo "Phase 2/2: Applying Terraform (SPIRE, Istio, Keycloak, workloads)..."
+terraform init
 terraform apply -auto-approve
 
 echo "============================================================================="
-echo "✅ BOOTSTRAP COMPLETE"
+echo "Bootstrap complete"
 echo "============================================================================="
-echo "🌐 WebApp Frontend: http://localhost:30000"
-echo "🔐 Keycloak Console: http://localhost:30080"
+echo "Web app (NodePort):  http://localhost:30000"
+echo "Keycloak (NodePort): http://localhost:30080"
 echo "============================================================================="
+echo "Tip: For a non-default cluster, rerun with KUBE_CONTEXT=<your-context> ./bootstrap.sh"

@@ -1,69 +1,87 @@
-# 🛰️ Sovereign Edge Identity: Unified 16,000-Store Fleet
+# Sovereign Edge Identity (SPIRE + Istio + OPA)
 
-An enterprise-scale Agentic AI infrastructure designed for 16,000 national edge stores, anchored by a **Unified SPIRE-as-CA** identity model. This project enforces cryptographically consistent zero-trust across the entire mesh, enabling sovereign AI agents to operate with high-fidelity identity under the `megamart.com` trust domain.
+Enterprise-style playground for a **unified SPIRE-as-CA** identity model on Kubernetes: SPIRE is the workload identity authority, **Istio** uses the SPIRE Workload API for data-plane certificates, and **OPA** enforces ABAC on the MCP path. The trust domain is **`megamart.com`**.
 
-## 📐 High-Fidelity Architecture
-This project uses **SPIRE** as the root of trust, delegating certificate issuance for the Istio service mesh and ensuring 100% cryptographic consistency from the edge to the core.
+## Architecture (summary)
 
 ```mermaid
 graph TD
-    subgraph "Sovereign Edge Hub (megamart.com)"
-        AGENT[AI Edge Agent] -- "spiffe://megamart.com/ns/apps/sa/ai-agent" --> MESH[Istio Service Mesh]
-        MCP[MCP Server] -- "spiffe://megamart.com/ns/apps/sa/mcp-server" --> MESH
-        MESH -- "mTLS + OPA" --> MCP
-    end
-
-    subgraph "Trust Foundation"
-        SPIRE_AGENT[SPIRE Agent] -- "Workload API Socket" --> MESH
-        SPIRE_AGENT -- "Workload API Socket" --> DISCOVERY[OIDC Discovery Provider]
-        SPIRE_SERVER[SPIRE Server] -- "Root Authority" --> SPIRE_AGENT
-    end
-
-    subgraph "Bootstrap Barrier"
-        JOB[Keycloak Provisioning Job] -- "OIDC Handshake" --> DISCOVERY
-        DISCOVERY -- "Fetch JWKS (Pending Fix)" --> SPIRE_AGENT
-    end
+  subgraph Apps
+    WEB[WebApp] --> AGENT[AI Agent]
+    AGENT --> MCP[MCP Server]
+  end
+  subgraph Mesh
+    MCP --> ENVOY[Envoy / Istio]
+    AGENT --> ENVOY
+  end
+  subgraph Identity
+    SPIRE_AGENT[SPIRE Agent DaemonSet] --> ENVOY
+    SPIRE_CLOUD[SPIRE Server cloud] --> SPIRE_EDGE[SPIRE Server edge]
+    SPIRE_EDGE --> SPIRE_AGENT
+  end
+  subgraph IdP
+    KC[Keycloak]
+  end
+  WEB --> KC
 ```
 
-## 🏗️ Technical Progress (megamart.com)
-- **Unified Domain**: Successfully migrated all mesh components to the `megamart.com` trust domain.
-- **Citadel Bypass**: Identity issuance is fully delegated to SPIRE, eliminating the "Two-Identity Problem."
-- **Standardized Anchors**: Aligned the entire fleet to a standardized node socket path at `/run/spire/agent-sockets/`.
-- **Identity Verification**: Confirmed the Provisioning Job's identity as `spiffe://megamart.com/ns/megamart-store-edge/sa/keycloak-provisioner`.
+- **SPIRE (cloud)**: Root-ish authority in `megamart-cloud-tier`, OIDC discovery enabled for Keycloak integration.
+- **SPIRE (edge)**: Subordinate server in `megamart-store-edge` upstream to cloud; trust bundle is synced into the edge namespace after Helm install.
+- **Istio**: `istiod` in `istio-system`; mesh `trustDomain` and SPIFFE socket via `meshConfig.defaultConfig.proxyMetadata.SPIFFE_ENDPOINT_SOCKET` (see `istio-spire.tf`).
+- **Workloads** (`megamart-store-apps`): `ai-agent`, `mcp-server`, `webapp-frontend` use local images with `imagePullPolicy: Never`, host-mounted SPIRE socket, and OPA sidecars fed from a `ConfigMap` that includes `policy.rego` plus optional GitHub bundle sync.
 
-## 🛑 Current Status: The "Sovereign Frontier"
-We have successfully built the Unified Identity foundation, but are currently analyzing a **Bootstrap Barrier** in the OIDC Discovery Provider. 
+## Prerequisites
 
-### The Challenge
-The OIDC provider (containerized) is currently unable to bridge its internal handshake to the node's SPIRE socket despite volume mount bridging. This prevents the final forging of the `megamart-edge` identity realm.
+- **Kubernetes** with `kubectl` configured (defaults to context **`rancher-desktop`** — Rancher Desktop is a good fit).
+- **Docker** (build host shares the daemon with the cluster on Rancher Desktop so `Never` pulls work).
+- **Terraform** (>= 1.x).
 
-### The Problem Statement
-- **ConfigMap Resistance**: Helm chart templates are currently resisting the socket path overrides required for the Discovery Provider binary.
-- **Orchestration Lag**: At 16,000-store scale, the "Bootstrap Job" requires a definitive OIDC heartbeat which is currently in a manual stabilization phase.
+## One-command bootstrap
 
----
+From the repo root:
 
-## 🚀 Setup Guide (Flawless Manual Sequence)
-
-### Stage 1: The Great Forge (Build Containers First) 🏗️
 ```bash
-# Build AI Agent, MCP Server, and Webapp
-./build_images.sh 
+chmod +x bootstrap.sh
+./bootstrap.sh
 ```
 
-### Stage 2: Unified Managed Infrastructure 🛡️
+This runs `build_images.sh` (tags `ai-agent-backend:latest`, `mcp-server:latest`, `webapp-frontend:latest`) then `terraform init` and `terraform apply -auto-approve`.
+
+### Custom cluster context
+
 ```bash
-# Initialize and Apply the entire Sovereign Edge stack
+export KUBE_CONTEXT=my-context
+./bootstrap.sh
+```
+
+If you use a non-default kubeconfig file (single path):
+
+```bash
+export KUBECONFIG=/path/to/config
+./bootstrap.sh
+```
+
+Terraform variables mirror this: `kube_context`, `kubeconfig_path`, and `keycloak_url` (see `variables.tf`). The Keycloak provider uses **`http://localhost:30080`** by default because Keycloak is exposed with **NodePort 30080**; if you apply from a host that cannot reach the API on `localhost`, set `TF_VAR_keycloak_url` to a reachable URL (for example after `kubectl port-forward`).
+
+### Manual steps (equivalent to bootstrap)
+
+```bash
+./build_images.sh
 terraform init
 terraform apply -auto-approve
 ```
 
----
+## Verification
 
-## 📺 Verification: The Agentic Handshake
-1.  Navigate to the **Store Associate Tablet** at `http://localhost:30000`.
-2.  Login via Keycloak (Link in UI).
-3.  Enter the prompt: `"show list of orders"`.
+1. **Web UI**: `http://localhost:30000` (NodePort for `webapp-frontend`).
+2. **Keycloak admin**: `http://localhost:30080` (admin / `megamart_secure_admin_pass` — from Terraform).
+3. Log in via the app flow and exercise the agent (e.g. “show list of orders”).
 
----
-**Repository State**: Unified Trust Achieved | Handshake Pending 🛡️🦾
+See **[README-MESH.md](README-MESH.md)** for Istio SPIRE SDS, OPA external authorization, and policy details.
+
+## Repository layout
+
+- `main.tf` — Namespaces, SPIRE Helm releases, trust-bundle sync, Keycloak, app deployments, Istio manifests.
+- `istio-spire.tf` — Istio base + `istiod` with SPIFFE metadata and OPA `extensionProviders`.
+- `policy.rego` — OPA policy (also embedded in the OPA `ConfigMap`).
+- `spire/` — Vendored/reference SPIRE Helm chart subtree (upstream charts are pulled from `helm-charts-hardened` at apply time).

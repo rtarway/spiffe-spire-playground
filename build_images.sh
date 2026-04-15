@@ -2,12 +2,14 @@
 
 # 🛰️ The Great Forge: 16,000-Store Image Builder
 # This script builds the core edge images for the megamart.com fleet.
-# Tailored for Rancher Desktop / Local Docker daemon.
+# Works with any local Docker daemon (Docker Desktop, Rancher Desktop, etc.).
 
 set -e
 
-# Anchor the Rancher Desktop binaries
-export PATH="/Users/rtarway/.rd/bin:$PATH"
+for _d in "${HOME}/.rd/bin" "/usr/local/bin" "/opt/homebrew/bin"; do
+  [[ -d "${_d}" ]] && PATH="${_d}:${PATH}"
+done
+export PATH
 
 echo "🏗️ Starting the Great Forge..."
 

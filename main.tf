@@ -6,23 +6,22 @@ terraform {
   }
 }
 
-# Point directly to Rancher Desktop's local kubeconfig
 provider "kubernetes" {
-  config_path    = "~/.kube/config"
-  config_context = "rancher-desktop"
+  config_path    = local.kubeconfig_expanded
+  config_context = var.kube_context
 }
 
 provider "helm" {
   kubernetes {
-    config_path    = "~/.kube/config"
-    config_context = "rancher-desktop"
+    config_path    = local.kubeconfig_expanded
+    config_context = var.kube_context
   }
 }
 
-# The Identity Authority Provider (Assumes NodePort 30080)
+# Keycloak must be reachable from this host (NodePort 30080 when using local/Rancher Desktop).
 provider "keycloak" {
   client_id = "admin-cli"
-  url       = "http://localhost:30080"
+  url       = var.keycloak_url
   username  = "admin"
   password  = "megamart_secure_admin_pass"
 }
@@ -164,8 +163,10 @@ resource "null_resource" "spire_trust_bundle_sync" {
   depends_on = [helm_release.spire_cloud, helm_release.spire_edge]
 
   provisioner "local-exec" {
-    command = <<EOT
-      KUBECTL=/Users/rtarway/.rd/bin/kubectl
+    command = <<-EOT
+      set -e
+      export KUBECONFIG="${local.kubeconfig_expanded}"
+      KUBECTL="kubectl --context=${var.kube_context}"
 
       echo "[1/4] Waiting for Cloud SPIRE Server to be Ready..."
       $KUBECTL wait --for=condition=Ready pod/spire-cloud-server-0 \
@@ -213,7 +214,7 @@ resource "helm_release" "spire_edge" {
     name  = "spire-server.ca_subject.organization"
     value = "MegaMart"
   }
-  
+
   # NOTE: rootCas for upstream authority verification is handled by the
   # spire_trust_bundle_sync null_resource, which injects the Cloud Authority
   # bundle directly into the spire-bundle ConfigMap after Helm install.
@@ -237,7 +238,7 @@ resource "helm_release" "spire_edge" {
     name  = "spire-server.controllerManager.validatingWebhookConfiguration.upgradeHook.image.repository"
     value = "bitnami/kubectl"
   }
-  
+
   set {
     name  = "spire-agent.healthChecks.port"
     value = "9981"
@@ -279,9 +280,11 @@ resource "null_resource" "spire_edge_config_patch" {
   depends_on = [helm_release.spire_edge]
 
   provisioner "local-exec" {
-    command = <<EOT
-      KUBECTL=/Users/rtarway/.rd/bin/kubectl
-      
+    command = <<-EOT
+      set -e
+      export KUBECONFIG="${local.kubeconfig_expanded}"
+      KUBECTL="kubectl --context=${var.kube_context}"
+
       echo "Injecting UpstreamAuthority plugin into Edge Server ConfigMap..."
       $KUBECTL patch configmap spire-edge-server -n megamart-store-edge --type merge -p '
       data:
@@ -574,19 +577,19 @@ resource "keycloak_openid_audience_protocol_mapper" "ai_agent_audience_mapper" {
   name      = "audience-mapper-ai-agent"
 
   included_client_audience = "ai-agent"
-  add_to_id_token         = false
-  add_to_access_token     = true
+  add_to_id_token          = false
+  add_to_access_token      = true
 }
 #
 ## 2. MCP Server (Resource Server)
 resource "keycloak_openid_client" "mcp_server" {
-  realm_id                     = keycloak_realm.megamart_edge.id
-  client_id                    = "mcp-server"
-  name                         = "MCP Server API"
-  enabled                      = true
-  access_type                  = "CONFIDENTIAL"
-  service_accounts_enabled     = true
-  full_scope_allowed           = false
+  realm_id                 = keycloak_realm.megamart_edge.id
+  client_id                = "mcp-server"
+  name                     = "MCP Server API"
+  enabled                  = true
+  access_type              = "CONFIDENTIAL"
+  service_accounts_enabled = true
+  full_scope_allowed       = false
   authorization {
     policy_enforcement_mode = "ENFORCING"
   }
@@ -601,14 +604,14 @@ resource "keycloak_openid_hardcoded_role_protocol_mapper" "mcp_executor_hardcode
 #
 ## 3. AI Agent (Sovereign Executor)
 resource "keycloak_openid_client" "ai_agent" {
-  realm_id                     = keycloak_realm.megamart_edge.id
-  client_id                    = "ai-agent"
-  name                         = "AI Agent Backend"
-  enabled                      = true
-  access_type                  = "CONFIDENTIAL"
-  service_accounts_enabled     = true
-  client_authenticator_type    = "client-secret"
-  client_secret               = "ai-agent-secret"
+  realm_id                  = keycloak_realm.megamart_edge.id
+  client_id                 = "ai-agent"
+  name                      = "AI Agent Backend"
+  enabled                   = true
+  access_type               = "CONFIDENTIAL"
+  service_accounts_enabled  = true
+  client_authenticator_type = "client-secret"
+  client_secret             = "ai-agent-secret"
 }
 #
 # 4. TOKEN EXCHANGE POLICY
@@ -642,14 +645,14 @@ resource "keycloak_openid_client_client_policy" "ai_agent_policy" {
 }
 #
 resource "keycloak_user" "associate_user" {
-  realm_id       = keycloak_realm.megamart_edge.id
-  username       = "store-associate-user"
+  realm_id         = keycloak_realm.megamart_edge.id
+  username         = "store-associate-user"
   enabled          = true
   email_verified   = true
   required_actions = []
-  first_name     = "Store"
-  last_name      = "Associate"
-  email          = "associate@megamart.com"
+  first_name       = "Store"
+  last_name        = "Associate"
+  email            = "associate@megamart.com"
   initial_password {
     value     = "password"
     temporary = false
@@ -694,7 +697,7 @@ resource "kubernetes_deployment" "ai_agent" {
     template {
       metadata {
         labels = {
-          app                                 = "ai-agent"
+          app                                = "ai-agent"
           "spiffe.io/spire-managed-identity" = "true"
         }
         annotations = {
@@ -704,7 +707,7 @@ resource "kubernetes_deployment" "ai_agent" {
       }
       spec {
         service_account_name = kubernetes_service_account.ai_agent.metadata[0].name
-        
+
         # OPA SIDECAR (Local Decision Engine)
         container {
           name  = "opa"
@@ -719,8 +722,8 @@ resource "kubernetes_deployment" "ai_agent" {
         }
 
         container {
-          name  = "ai-agent"
-          image = "ai-agent-backend:latest"
+          name              = "ai-agent"
+          image             = "ai-agent-backend:latest"
           image_pull_policy = "Never"
           port { container_port = 8000 }
           env {
@@ -757,7 +760,7 @@ resource "kubernetes_service" "ai_agent" {
     namespace = kubernetes_namespace.store_apps.metadata[0].name
   }
   spec {
-    type = "ClusterIP"
+    type     = "ClusterIP"
     selector = { app = "ai-agent" }
     port {
       port        = 8000
@@ -786,7 +789,7 @@ resource "kubernetes_deployment" "mcp_server" {
     template {
       metadata {
         labels = {
-          app                                 = "mcp-server"
+          app                                = "mcp-server"
           "spiffe.io/spire-managed-identity" = "true"
         }
         annotations = {
@@ -796,7 +799,7 @@ resource "kubernetes_deployment" "mcp_server" {
       }
       spec {
         service_account_name = kubernetes_service_account.mcp_server.metadata[0].name
-        
+
         # OPA SIDECAR (Local Decision Engine)
         container {
           name  = "opa"
@@ -811,8 +814,8 @@ resource "kubernetes_deployment" "mcp_server" {
         }
 
         container {
-          name  = "mcp-server"
-          image = "mcp-server:latest"
+          name              = "mcp-server"
+          image             = "mcp-server:latest"
           image_pull_policy = "Never"
           env {
             name  = "KEYCLOAK_URL"
@@ -878,7 +881,7 @@ resource "kubernetes_deployment" "webapp_frontend" {
     template {
       metadata {
         labels = {
-          app                                 = "webapp-frontend"
+          app                                = "webapp-frontend"
           "spiffe.io/spire-managed-identity" = "true"
         }
         annotations = {
@@ -888,8 +891,8 @@ resource "kubernetes_deployment" "webapp_frontend" {
       }
       spec {
         container {
-          name  = "webapp-frontend"
-          image = "webapp-frontend:latest"
+          name              = "webapp-frontend"
+          image             = "webapp-frontend:latest"
           image_pull_policy = "Never"
           port { container_port = 3000 }
           env {
@@ -909,7 +912,7 @@ resource "kubernetes_service" "webapp_frontend" {
     namespace = kubernetes_namespace.store_apps.metadata[0].name
   }
   spec {
-    type = "NodePort"
+    type     = "NodePort"
     selector = { app = "webapp-frontend" }
     port {
       port        = 80
@@ -952,7 +955,7 @@ resource "kubernetes_manifest" "keycloak_peer_auth" {
     }
     spec = {
       selector = { matchLabels = { app = "keycloak" } }
-      mtls = { mode = "PERMISSIVE" }
+      mtls     = { mode = "PERMISSIVE" }
     }
   }
 }
@@ -967,7 +970,7 @@ resource "kubernetes_manifest" "webapp_peer_auth" {
     }
     spec = {
       selector = { matchLabels = { app = "webapp-frontend" } }
-      mtls = { mode = "PERMISSIVE" }
+      mtls     = { mode = "PERMISSIVE" }
     }
   }
 }
