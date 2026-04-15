@@ -14,6 +14,10 @@ const WEBAPP_AGENT_URL =
     "http://localhost:30000/api/agent/chat";
 
 const QUIET = process.env.QUIET === "1" || process.env.QUIET === "true";
+/** Sleep between batches (ms) — avoids Keycloak “quick login” / DB saturation under load. */
+const BATCH_DELAY_MS = parseInt(process.env.BATCH_DELAY_MS || "0", 10) || 0;
+/** Max distinct error messages to print (avoid log flood). */
+const MAX_ERROR_SAMPLES = parseInt(process.env.MAX_ERROR_SAMPLES || "8", 10) || 8;
 
 const PROMPTS = [
     "Check pending e-commerce orders for curbside pickup",
@@ -37,9 +41,22 @@ async function getAccessToken(quiet = false) {
         body: params.toString(),
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        throw new Error(
+            `Keycloak token: non-JSON body HTTP ${response.status}: ${text.slice(0, 400)}`
+        );
+    }
+    if (!response.ok) {
+        throw new Error(
+            `Keycloak token: HTTP ${response.status} ${JSON.stringify(data).slice(0, 400)}`
+        );
+    }
     if (!data.access_token) {
-        throw new Error("Login failed: " + JSON.stringify(data));
+        throw new Error("Keycloak token: missing access_token: " + JSON.stringify(data).slice(0, 400));
     }
     if (!quiet) {
         console.log("Keycloak login OK (token received).");
@@ -57,11 +74,15 @@ async function sendPrompt(token, prompt) {
         body: JSON.stringify({ prompt }),
     });
 
+    const body = await response.text();
     if (response.status !== 200) {
-        const body = await response.text();
-        throw new Error(`BFF/chat failed ${response.status}: ${body}`);
+        throw new Error(`BFF/chat HTTP ${response.status}: ${body.slice(0, 500)}`);
     }
-    return response.json();
+    try {
+        return body ? JSON.parse(body) : {};
+    } catch {
+        throw new Error(`BFF/chat: non-JSON HTTP ${response.status}: ${body.slice(0, 400)}`);
+    }
 }
 
 /** One browser-equivalent session: fresh login + one agent prompt. */
@@ -82,6 +103,7 @@ async function run(iterations = 1000, concurrency = 5) {
 
     let completed = 0;
     let errors = 0;
+    const errorSamples = new Set();
 
     for (let offset = 0; offset < iterations; offset += concurrency) {
         const batchSize = Math.min(concurrency, iterations - offset);
@@ -93,11 +115,24 @@ async function run(iterations = 1000, concurrency = 5) {
                 completed++;
             } else {
                 errors++;
-                console.error("Workflow error:", r.reason?.message || r.reason);
+                const msg = String(r.reason?.message || r.reason);
+                if (errorSamples.size < MAX_ERROR_SAMPLES) {
+                    errorSamples.add(msg);
+                }
             }
+        }
+        if (BATCH_DELAY_MS > 0) {
+            await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
         }
         if (completed % 50 === 0 && completed > 0) {
             console.log(`Progress: ${completed}/${iterations} workflows OK (${errors} errors so far).`);
+        }
+    }
+
+    if (errors > 0 && errorSamples.size > 0) {
+        console.error("Sample errors (distinct, up to " + MAX_ERROR_SAMPLES + "):");
+        for (const s of errorSamples) {
+            console.error(" —", s);
         }
     }
 
