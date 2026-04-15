@@ -40,5 +40,8 @@ validate_jwt if {
 bearer_token = t if {
     v := headers.authorization
     startswith(v, "Bearer ")
-    t := substring(v, count("Bearer "), -1)
+    parts := split(v, " ")
+    count(parts) == 2
+    parts[0] == "Bearer"
+    t := parts[1]
 }

@@ -466,6 +466,8 @@ resource "kubernetes_config_map" "opa_config" {
           min_delay_seconds: 10
           max_delay_seconds: 20
     YAML
+    # Loaded alongside bundles so MCP OPA always has authz.allow.mcp (not only after GitHub sync).
+    "policy.rego" = file("${path.module}/policy.rego")
   }
 }
 
@@ -707,7 +709,7 @@ resource "kubernetes_deployment" "ai_agent" {
         container {
           name  = "opa"
           image = "openpolicyagent/opa:latest"
-          args  = ["run", "--server", "--config-file=/config/config.yaml", "--log-level=debug"]
+          args  = ["run", "--server", "--config-file=/config/config.yaml", "/config/policy.rego", "--log-level=debug"]
           port { container_port = 9191 }
           volume_mount {
             name       = "opa-config"
@@ -755,12 +757,11 @@ resource "kubernetes_service" "ai_agent" {
     namespace = kubernetes_namespace.store_apps.metadata[0].name
   }
   spec {
-    type = "NodePort"
+    type = "ClusterIP"
     selector = { app = "ai-agent" }
     port {
       port        = 8000
       target_port = 8000
-      node_port   = 30001
     }
   }
 }
@@ -800,7 +801,7 @@ resource "kubernetes_deployment" "mcp_server" {
         container {
           name  = "opa"
           image = "openpolicyagent/opa:latest"
-          args  = ["run", "--server", "--config-file=/config/config.yaml", "--log-level=debug"]
+          args  = ["run", "--server", "--config-file=/config/config.yaml", "/config/policy.rego", "--log-level=debug"]
           port { container_port = 9191 }
           volume_mount {
             name       = "opa-config"
@@ -820,6 +821,10 @@ resource "kubernetes_deployment" "mcp_server" {
           env {
             name  = "SPIFFE_ENDPOINT_SOCKET"
             value = "unix:///run/spire/sockets/spire-agent.sock"
+          }
+          env {
+            name  = "OPA_URL"
+            value = "http://127.0.0.1:9191"
           }
           port { container_port = 8001 }
           volume_mount {
@@ -887,6 +892,11 @@ resource "kubernetes_deployment" "webapp_frontend" {
           image = "webapp-frontend:latest"
           image_pull_policy = "Never"
           port { container_port = 3000 }
+          env {
+            name = "AI_AGENT_URL"
+            # In-cluster only: browser must use BFF /api/agent/chat, not NodePort to ai-agent.
+            value = "http://ai-agent.${kubernetes_namespace.store_apps.metadata[0].name}.svc.cluster.local:8000"
+          }
         }
       }
     }
@@ -962,22 +972,7 @@ resource "kubernetes_manifest" "webapp_peer_auth" {
   }
 }
 
-# Browser hits NodePort with plain HTTP; mesh default is STRICT mTLS — without this,
-# Envoy rejects inbound traffic before it reaches the FastAPI container (no pod logs).
-resource "kubernetes_manifest" "ai_agent_peer_auth" {
-  manifest = {
-    apiVersion = "security.istio.io/v1beta1"
-    kind       = "PeerAuthentication"
-    metadata = {
-      name      = "ai-agent-permissive"
-      namespace = kubernetes_namespace.store_apps.metadata[0].name
-    }
-    spec = {
-      selector = { matchLabels = { app = "ai-agent" } }
-      mtls = { mode = "PERMISSIVE" }
-    }
-  }
-}
+# ai-agent is ClusterIP-only; only mesh peers (e.g. webapp BFF) reach it — STRICT mTLS applies.
 #
 ## 2. Enforce High-Clearance Identity for Token Exchange
 ## resource "kubernetes_manifest" "keycloak_authz" {

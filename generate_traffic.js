@@ -1,5 +1,7 @@
 const KEYCLOAK_TOKEN_URL = "http://localhost:30080/realms/megamart-edge/protocol/openid-connect/token";
-const AI_AGENT_URL = "http://localhost:30001/agent/chat";
+// BFF on webapp (same path the browser uses); ai-agent is ClusterIP-only behind the mesh.
+const WEBAPP_AGENT_URL =
+    process.env.WEBAPP_AGENT_URL || "http://localhost:30000/api/agent/chat";
 
 const PROMPTS = [
     "Check pending e-commerce orders for curbside pickup",
@@ -32,7 +34,7 @@ async function getAccessToken() {
 }
 
 async function sendPrompt(token, prompt) {
-    const response = await fetch(AI_AGENT_URL, {
+    const response = await fetch(WEBAPP_AGENT_URL, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

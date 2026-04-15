@@ -37,7 +37,8 @@ export default function Home() {
 
   const submitPrompt = async () => {
     try {
-      const res = await fetch("http://localhost:30001/agent/chat", {
+      // Same-origin BFF: webapp backend proxies to ai-agent over the mesh (no direct browser→ai-agent).
+      const res = await fetch("/api/agent/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
