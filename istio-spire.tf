@@ -56,6 +56,9 @@ resource "helm_release" "istiod" {
     meshConfig:
       trustDomain: "megamart.com"
       defaultConfig:
+        # Forward mTLS client cert info to app containers (X-Forwarded-Client-Cert) for OPA / policy.rego.
+        gatewayTopology:
+          forwardClientCertDetails: APPEND_FORWARD
         proxyMetadata:
           # Tell every istio-agent to use the SPIRE Workload API for its cert.
           SPIFFE_ENDPOINT_SOCKET: "unix:///run/spire/sockets/spire-agent.sock"

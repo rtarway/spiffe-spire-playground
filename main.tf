@@ -709,7 +709,7 @@ resource "kubernetes_deployment" "ai_agent" {
         container {
           name  = "opa"
           image = "openpolicyagent/opa:latest"
-          args  = ["run", "--server", "--config-file=/config/config.yaml", "/config/policy.rego", "--log-level=debug"]
+          args  = ["run", "--server", "--addr=:9191", "--config-file=/config/config.yaml", "/config/policy.rego", "--log-level=debug"]
           port { container_port = 9191 }
           volume_mount {
             name       = "opa-config"
@@ -801,7 +801,7 @@ resource "kubernetes_deployment" "mcp_server" {
         container {
           name  = "opa"
           image = "openpolicyagent/opa:latest"
-          args  = ["run", "--server", "--config-file=/config/config.yaml", "/config/policy.rego", "--log-level=debug"]
+          args  = ["run", "--server", "--addr=:9191", "--config-file=/config/config.yaml", "/config/policy.rego", "--log-level=debug"]
           port { container_port = 9191 }
           volume_mount {
             name       = "opa-config"
