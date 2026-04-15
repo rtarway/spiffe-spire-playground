@@ -961,6 +961,23 @@ resource "kubernetes_manifest" "webapp_peer_auth" {
     }
   }
 }
+
+# Browser hits NodePort with plain HTTP; mesh default is STRICT mTLS — without this,
+# Envoy rejects inbound traffic before it reaches the FastAPI container (no pod logs).
+resource "kubernetes_manifest" "ai_agent_peer_auth" {
+  manifest = {
+    apiVersion = "security.istio.io/v1beta1"
+    kind       = "PeerAuthentication"
+    metadata = {
+      name      = "ai-agent-permissive"
+      namespace = kubernetes_namespace.store_apps.metadata[0].name
+    }
+    spec = {
+      selector = { matchLabels = { app = "ai-agent" } }
+      mtls = { mode = "PERMISSIVE" }
+    }
+  }
+}
 #
 ## 2. Enforce High-Clearance Identity for Token Exchange
 ## resource "kubernetes_manifest" "keycloak_authz" {
