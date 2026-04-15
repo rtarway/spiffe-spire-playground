@@ -1,126 +1,169 @@
 # Sovereign Identity Mesh: Strategic Architectural Review
 
-This document provides a comprehensive synthesis of the multi-phase deployment of the Sovereign Identity Mesh across the 16,000-store fleet. It details the working configuration, lessons learned (Gotchas), and the final security posture of the Edge AI system.
+This document synthesizes the **current** edge deployment: SPIRE-backed workload identity, Istio mTLS, Keycloak OIDC, a **browser-safe BFF** (webapp backend) in front of the AI agent, and **OPA** as the MCP tool gate. It also records lessons learned and the intended security posture.
 
-## 1. The Final Working Configuration
+## 1. Current Architecture (Summary)
 
-The current setup achieves a **Zero-Trust Sovereign Identity Fabric**, where identity is rooted in SPIRE, traffic is secured by Istio, and authorization is enforced by OPA.
+The design aims at a **zero-trust service mesh** where **workload identity** is rooted in SPIRE, **transport** is Istio **mTLS** (SPIRE-fed proxy certificates), **humans** authenticate via Keycloak (OIDC), and **authorization** for MCP tool execution combines **JWT validation** (application) with **OPA policy** (SPIFFE provenance + downscoped roles).
 
-### Core Stack
-- **Identity (Layer 0)**: SPIRE Hierarchical Deployment (Cloud Root -> Edge Subordinate).
-- **Service Mesh (Layer 1)**: Istio decoupled from Citadel, using the SPIFFE Workload API for certificate issuance.
-- **Identity Provider (Layer 2)**: Keycloak (OIDC) pinned to a consistent hostname for cross-realm token validation.
-- **Enforcement (Layer 3)**: Envoy sidecars (mTLS) + OPA sidecars (ABAC/JWT validation).
+### Core stack
 
-### The Handshake Workflow
-1. **Frontend**: The WebApp obtains a human-scoped JWT from Keycloak (Audience: `ai-agent`).
-2. **AI Agent**: The Agent retrieves its SPIFFE SVID from the local SPIRE Agent and uses it for strict mTLS communication.
-3. **Token Exchange**: The Agent performs an RFC 8693 token exchange at Keycloak, swapping the human token for a down-scoped `mcp-server` token (Role: `mcp-executor`).
-4. **Enforcement**: The MCP Server receives the request through Envoy (validating the mTLS transport) and OPA (validating the JWT roles and SPIFFE provenance).
+| Layer | Components |
+|-------|------------|
+| **Trust / identity** | SPIRE Cloud → SPIRE Edge; Istio `trustDomain: megamart.com`; proxies use `SPIFFE_ENDPOINT_SOCKET` for certs. |
+| **Mesh** | Istio **STRICT** mTLS mesh-wide; `PeerAuthentication` **PERMISSIVE** on **Keycloak** and **webapp** so browsers can use **HTTP NodePorts** for login and UI. |
+| **OIDC** | Keycloak (`megamart-edge` realm): human tokens carry `store-associate`; token exchange yields `mcp-executor` for MCP. |
+| **Apps** | Next.js **webapp** (BFF route + static UI), **ai-agent** (FastAPI), **mcp-server** (FastAPI tools). Each injected workload gets an **Envoy** sidecar + **OPA** sidecar where configured. |
 
-### Visual Architecture
+### Critical pattern: browser never calls the AI agent
+
+The browser **does not** open `ai-agent` on a NodePort. It only talks to the **webapp** (same origin for chat):
+
+1. **Login (exception path)**: Browser → **Keycloak** NodePort (`30080`) — password grant demo; transport is **plain HTTP** in this playground (PERMISSIVE on Keycloak).
+2. **Chat**: Browser → **Webapp** NodePort (`30000`) → **Next.js route** `POST /api/agent/chat` → server-side `fetch` to **`ai-agent` Kubernetes Service** (`ClusterIP`, port 8000). That hop is **inside the mesh**: **webapp Envoy → ai-agent Envoy** (mTLS, SPIRE-backed SVIDs on the data plane).
+
+`ai-agent` is exposed only as **ClusterIP** — no host NodePort — so it cannot be reached directly from the laptop browser.
+
+### Request flow (happy path: MCP tool needed)
+
+1. **Human JWT**: User token (role `store-associate`) is sent **only** to the webapp BFF (`Authorization: Bearer` on `/api/agent/chat`).
+2. **BFF → ai-agent**: Next.js server forwards the same header to `http://ai-agent.<ns>.svc.cluster.local:8000/agent/chat` over the mesh.
+3. **ai-agent**:
+   - Validates the human JWT (JWKS, `store-associate`).
+   - **LLM (stub)** decides whether an MCP tool is required (`llm_plan_mcp`); no token exchange if no tool.
+   - Optionally obtains a SPIFFE JWT-SVID for future external LLM egress (not required for mesh hops).
+   - **RFC 8693 token exchange** at Keycloak → downscoped token with **`mcp-executor`**, audience `mcp-server`.
+   - Calls MCP JSON-RPC over mesh (`mcp-server:8001`).
+4. **mcp-server**:
+   - **JWT**: Validates signature via JWKS (cryptographic check).
+   - **OPA**: `POST` to local OPA `http://127.0.0.1:9191/v1/data/authz/allow/mcp/messages` with `input` shaped like Envoy ext-authz (`authorization` + `x-forwarded-client-cert` headers). Policy enforces **ai-agent SPIFFE** in **XFCC** and **mcp-executor** / not **store-associate** in the bearer JWT (see `policy.rego`).
+   - If OPA allows → tool handler runs.
+
+### Visual architecture
 
 ```mermaid
-graph TD
-    subgraph "Megamart Store Edge (Offline Capable)"
-        
-        subgraph "Layer 0: Trust Fabric"
-            SA[SPIRE Agent]
-            SS[SPIRE Edge Server]
-            SS -- "PSAT Attestation" --> Cloud[SPIRE Cloud Server]
-        end
-
-        subgraph "Layer 2: Identity"
-            KC[Keycloak Edge]
-        end
-
-        subgraph "Layer 1 & 3: Mesh & Enforcement"
-            WA[WebApp Frontend]
-            AI[AI Agent]
-            MCP[MCP Server]
-            OPA[OPA Sidecar]
-            
-            WA -- "1. Human JWT" --> AI
-            AI -- "2. Token Exchange (mTLS)" --> KC
-            AI -- "3. Exchanged JWT (mTLS)" --> MCP
-            MCP -. "4. Validate Claims" .-> OPA
-        end
-        
-        SA -. "Mounts spire-agent.sock" .-> WA
-        SA -. "Mounts spire-agent.sock" .-> AI
-        SA -. "Mounts spire-agent.sock" .-> MCP
-        SA -. "Mounts spire-agent.sock" .-> KC
+flowchart TB
+    subgraph Browser["User device (no workload SVID)"]
+        U[Browser]
     end
+
+    subgraph StoreApps["megamart-store-apps (injected workloads)"]
+        subgraph WebappPod["webapp-frontend pod"]
+            NEXT[Next.js UI]
+            BFF["BFF: POST /api/agent/chat"]
+            EW[Envoy sidecar]
+            NEXT --> BFF
+        end
+
+        subgraph AgentPod["ai-agent pod"]
+            AA[ai-agent FastAPI]
+            EA[Envoy sidecar]
+        end
+
+        subgraph McpPod["mcp-server pod"]
+            MCP[mcp-server FastAPI]
+            EM[Envoy sidecar]
+            OPA[OPA :9191]
+        end
+
+        BFF -->|"ClusterIP :8000, mTLS"| EA
+        EA --> AA
+    end
+
+    subgraph StoreEdge["megamart-store-edge"]
+        KC[Keycloak NodePort :30080]
+    end
+
+    subgraph SPIRE["SPIRE / node"]
+        SA[(SPIRE agent UDS)]
+    end
+
+    U -->|"1a HTTP login"| KC
+    U -->|"1b HTTP + Bearer, same-origin"| BFF
+
+    AA -->|"2 Token exchange RFC 8693"| KC
+    AA -->|"3 MCP + exchanged JWT, mTLS"| EM
+    EM --> MCP
+    MCP -->|"4 policy check"| OPA
+
+    SA -. UDS mounts .-> EW
+    SA -. UDS mounts .-> EA
+    SA -. UDS mounts .-> EM
 ```
 
----
-
-## 2. The "Gotchas" (Why It Kept Breaking)
-
-### The Bootstrap Paradox (Nested Identity)
-**The Bug**: The `spire-edge-agent` was caught in a `CrashLoopBackOff`, causing all application sidecars to hang in `Init:0/2`.
-**The Reality**: Helm deployed a stale `spire-bundle` for the agent. When the Edge Server got its new Cloud-signed identity, the Agent rejected it because its local bundle didn't know about the Cloud CA.
-**The Fix**: Implemented the **Bundle Bridge**. We wrote a Terraform provisioner to extract the root trust bundle from the Cloud Server and forcefully inject it into the Edge namespace *before* the Agent boots.
-
-### The OIDC Helm Abstraction Barrier
-**The Bug**: OIDC Discovery was failing because the pod couldn't mount our custom socket path (`/run/spire/agent-sockets`).
-**The Reality**: The SPIRE Helm chart hardcoded the `volumeMounts` for the OIDC provider, preventing us from overriding the paths via simple Helm values.
-**The Fix**: **Direct Manifest Injection**. We disabled the Helm-managed OIDC provider and deployed it natively using a Terraform `kubernetes_deployment`, giving us absolute control over the host paths.
-
-### The Double-Wrapping JWT Trap
-**The Bug**: We tried passing a SPIFFE JWT as an `actor_token` inside the Keycloak token exchange payload.
-**The Reality**: Keycloak rejected it (`invalid_token`) because we were "double-wrapping." We had not federated SPIRE as an external Identity Provider in Keycloak.
-**The Fix**: We stripped the JWT from the Keycloak payload and now rely exclusively on Istio's mTLS (which already authenticates the SPIFFE machine identity via X.509) for the internal Keycloak call. The SPIFFE JWT is reserved entirely for external egress (e.g., calling external LLM providers).
-**The Nuance (Why OIDC Discovery is Still Running)**: Even though mTLS handles internal app-to-app transport, the Native SPIFFE OIDC Discovery Provider remains critical. It ensures that OPA, external APIs, and eventually Keycloak (if fully federated) can cryptographically validate the signatures of any SPIFFE JWTs used for granular claim checks or external egress outside the boundaries of the mesh.
+**Transport note:** Istio sets **`meshConfig.defaultConfig.gatewayTopology.forwardClientCertDetails: APPEND_FORWARD`** so **`X-Forwarded-Client-Cert`** reaches the MCP app container; OPA policy uses it to assert the caller is **`spiffe://.../sa/ai-agent`**.
 
 ---
 
-## 3. The "Split-Personality" Ingress
+## 2. Configuration Details (Codebase)
 
-**The Problem**: Human browsers (laptops, phones) cannot participate in SPIRE mTLS because they don't have a local Workload API or an SVID. If the mesh is universally `STRICT`, humans are locked out.
-**The Solution**: We applied an Istio `PeerAuthentication` policy to Keycloak and the WebApp frontend set to `PERMISSIVE`. 
-- **Browser -> WebApp**: Standard HTTP/TLS.
-- **WebApp -> Keycloak (Backend)**: STRICT mTLS.
-- **WebApp -> AI Agent**: STRICT mTLS.
-
----
-
-## 4. Cloud-Outage Edge Survival (The Offline Store)
-
-**The Problem**: A standard nested SPIRE topology relies on short-lived intermediate certificates. If the Cloud goes down, the Edge Server stops issuing certs within hours, taking the store down with it.
-**The Architecture**: We extended the SPIRE CA TTL to `336h` (14 days) on both Cloud and Edge servers. 
-**The Local Topology**: Because Keycloak and its PostgreSQL database replica are deployed locally within the `megamart-store-edge` namespace alongside the apps, the entire AuthZ/AuthN pipeline can execute locally without reaching back to the cloud.
-**The Result**: If the store loses internet connection, the Edge Server can continue to mint and rotate SVIDs for local workloads, and Keycloak can continue to exchange tokens locally, for up to two weeks completely autonomously.
+| Topic | Implementation |
+|-------|----------------|
+| **Injection** | Namespace label `istio.io/rev=default` (Istio 1.29). |
+| **SPIRE socket on proxies** | Annotations `sidecar.istio.io/userVolume` + `userVolumeMount` (JSON uses **`hostPath`**, not `host_path`). |
+| **Istiod CA** | `global.pilotCertProvider: istiod` for control plane / webhook; data plane certs still from SPIRE via workload API. |
+| **No custom Helm `spire` inject template** | Removed: merging partial `istio-proxy` fragments breaks Istio 1.29 injection (duplicate init / missing image). |
+| **OPA** | `policy.rego` in ConfigMap; OPA started with **`--addr=:9191`** (default is **8181**, which broke localhost calls from the app). |
+| **Global policy bundle** | `config.yaml` still pulls a GitHub bundle; local `policy.rego` is loaded explicitly for predictable MCP rules. |
 
 ---
 
-## 5. Future Engineering: Beyond the MVP
+## 3. Gotchas (Why Things Broke)
 
-To take this from a playground to a production-grade 16,000-store rollout, the following architectural additions are recommended:
+### Bootstrap / SPIRE bundle
+Edge agents can fail if the trust bundle is stale vs Cloud. The repo uses trust sync patterns (see Terraform / `null_resource` history) so the edge agent trusts the cloud root before workloads start.
 
-### Federated Trust Domains (SPIRE Federation)
-Instead of a single `megamart.com` trust domain, implement independent domains (e.g., `store001.megamart.local`) that federate with the Cloud. This prevents a compromised store from impersonating another store.
+### Istio 1.29 injection merge
+Custom sidecar injector templates that patch **`containers: [{name: istio-proxy, ...}]`** without a full image spec produced **invalid Pods** (`image` required, duplicate `istio-proxy` init names). Prefer **annotations** for SPIRE UDS volumes, not parallel templates.
 
-### Automated Policy Distribution (GitOps)
-Currently, OPA policies are pulled via an init container or static ConfigMap. We need to implement a sync agent (like `kube-mgmt` or Flux) to push `policy.rego` updates directly to the edge nodes in real-time.
+### Browser vs STRICT mTLS
+Humans cannot present SPIFFE SVIDs. **PERMISSIVE** on **webapp** and **Keycloak** remains necessary for **HTTP NodePort** access. **Service-to-service** traffic still uses **mTLS** between Envoy sidecars under **STRICT** defaults.
 
-### Advanced OPA Rules
-* **Hardware Attestation**: OPA can verify hardware-rooted claims from SPIRE (TPM-backed) to ensure the agent is running on tampered-proof hardware.
-* **Anomaly detection**: Compare the frequency of MCP calls against a baseline and throttle in Rego.
+### ai-agent NodePort removal
+Exposing **ai-agent** on the host forced **PERMISSIVE** on that workload so browsers could connect. Moving to **BFF + ClusterIP** restores **STRICT**-friendly access (only mesh clients).
+
+### OPA port mismatch
+OPA’s default listen address is **:8181**. The mesh and apps were configured for **9191**; without **`--addr=:9191`**, the MCP server’s OPA client failed with connection errors.
+
+### OPA vs cryptographic JWT
+`policy.rego` uses **`io.jwt.decode`** (claims only). **JWKS verification** remains in **FastAPI** before OPA is consulted.
 
 ---
 
-## 6. Application Developer Perspective
+## 4. Split Personality: Browser vs Mesh
 
-### Current Coding Requirements
-* **SPIFFE Fetching**: Apps currently use `pyspiffe` or similar to fetch SVIDs manually for any logic requiring JWT-SVID generation (e.g., external LLM calls).
-* **Exchange Dance**: Developers must write the boilerplate `httpx` logic to handle the RFC 8693 payload and secret management.
+| Path | Typical transport in this playground | Notes |
+|------|--------------------------------------|--------|
+| Browser → Keycloak | HTTP NodePort | “First login” / token grant. |
+| Browser → Webapp | HTTP NodePort | Same-origin `/api/agent/chat`. |
+| Webapp → ai-agent | **mTLS** (Envoy) | ClusterIP, no browser hop. |
+| ai-agent → Keycloak / MCP | **mTLS** (Envoy) | Token exchange and tool calls. |
 
-### The "Identity Proxy" Sidecar Proposal
-We can eliminate developer complexity by creating a **Reusable Identity Sidecar**. This could be implemented by leveraging Envoy's native `ext_authz` filter, a lightweight reverse-proxy like OAuth2-Proxy, or a custom Go binary:
-1.  **Auto-Exchange**: The application sends a standard Authorization header; the sidecar intercepts it, performs the SPIFFE-backed exchange with Keycloak, and forwards the "shredded" down-scoped token to the target.
-2.  **Token Refresh**: The sidecar handles expiry and re-polling of the identity substrate.
-3.  **App Impact**: Developers simply write code against `localhost:SIDE-CAR-PORT`, making the complex identity infrastructure entirely invisible to the business logic.
+Production would add **TLS** (or HTTPS) in front of the browser-facing services; workload **SVIDs** remain on the mesh proxies, not in the browser.
 
-> [!IMPORTANT]
-> This architecture ensures that even in an **Offline Scenario**, the Store-Edge can maintain its trust domain. The Edge Server caches its intermediate CA from Cloud, allowing the AI fleet to operate locally without a round-trip to the internet for identity validation.
+---
+
+## 5. Cloud-Outage Edge Survival
+
+SPIRE CA TTL and local Keycloak/DB deployment allow extended **offline-style** operation at the edge (see earlier fleet design). The exact TTL values live in SPIRE / Helm configuration in this repo.
+
+---
+
+## 6. Future Engineering
+
+- **Real LLM**: Replace `llm_plan_mcp` with an external model; keep token exchange **after** the model decides tool use.
+- **Ingress + TLS**: Terminate HTTPS at a gateway; optional mutual TLS for enterprise-managed devices.
+- **Envoy `ext_authz` to OPA**: Today MCP calls OPA over **localhost**; alternatively wire **`AuthorizationPolicy`** with `CUSTOM` + `opa-ext-authz` so Envoy invokes OPA (same policy bundle).
+- **GitOps for policy**: Continuous delivery of `policy.rego` to clusters.
+- **Federated trust domains** for store-level isolation.
+
+---
+
+## 7. Application Developer Perspective
+
+- **BFF**: Frontend developers send **`Authorization`** only to **`/api/agent/chat`**; they must **not** embed `ai-agent` URLs in client-side code.
+- **ai-agent**: Validates human token, runs LLM decision stub, performs **token exchange**, calls MCP with **mcp token**.
+- **MCP**: Keep JWKS validation; **OPA** is the policy gate for tool execution (SPIFFE + roles).
+- **SPIFFE JWT**: Still available for **external** LLM providers (egress), not for replacing mesh mTLS internally.
+
+This architecture keeps **human OIDC**, **workload SPIFFE**, and **policy (OPA)** in separate layers while ensuring the **browser attack surface** is limited to the **webapp** and **Keycloak** endpoints you deliberately expose.
