@@ -691,9 +691,13 @@ resource "kubernetes_deployment" "ai_agent" {
     selector { match_labels = { app = "ai-agent" } }
     template {
       metadata {
-        labels = { app = "ai-agent" }
+        labels = {
+          app                                 = "ai-agent"
+          "spiffe.io/spire-managed-identity" = "true"
+        }
         annotations = {
-          "inject.istio.io/templates" = "sidecar,spire"
+          "sidecar.istio.io/userVolume"      = jsonencode([{ name = "spire-agent-socket", hostPath = { path = "/run/spire/agent-sockets", type = "Directory" } }])
+          "sidecar.istio.io/userVolumeMount" = jsonencode([{ name = "spire-agent-socket", mountPath = "/run/spire/sockets", readOnly = true }])
         }
       }
       spec {
@@ -780,9 +784,13 @@ resource "kubernetes_deployment" "mcp_server" {
     selector { match_labels = { app = "mcp-server" } }
     template {
       metadata {
-        labels = { app = "mcp-server" }
+        labels = {
+          app                                 = "mcp-server"
+          "spiffe.io/spire-managed-identity" = "true"
+        }
         annotations = {
-          "inject.istio.io/templates" = "sidecar,spire"
+          "sidecar.istio.io/userVolume"      = jsonencode([{ name = "spire-agent-socket", hostPath = { path = "/run/spire/agent-sockets", type = "Directory" } }])
+          "sidecar.istio.io/userVolumeMount" = jsonencode([{ name = "spire-agent-socket", mountPath = "/run/spire/sockets", readOnly = true }])
         }
       }
       spec {
@@ -864,9 +872,13 @@ resource "kubernetes_deployment" "webapp_frontend" {
     selector { match_labels = { app = "webapp-frontend" } }
     template {
       metadata {
-        labels = { app = "webapp-frontend" }
+        labels = {
+          app                                 = "webapp-frontend"
+          "spiffe.io/spire-managed-identity" = "true"
+        }
         annotations = {
-          "inject.istio.io/templates" = "sidecar,spire"
+          "sidecar.istio.io/userVolume"      = jsonencode([{ name = "spire-agent-socket", hostPath = { path = "/run/spire/agent-sockets", type = "Directory" } }])
+          "sidecar.istio.io/userVolumeMount" = jsonencode([{ name = "spire-agent-socket", mountPath = "/run/spire/sockets", readOnly = true }])
         }
       }
       spec {

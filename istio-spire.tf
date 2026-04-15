@@ -15,13 +15,10 @@ resource "helm_release" "istio_base" {
 # trustDomain is set to megamart.com to match SPIRE.
 # proxyMetadata.SPIFFE_ENDPOINT_SOCKET tells every istio-agent to fetch its
 # X.509 cert from the SPIRE Workload API socket instead of Citadel.
-# The "spire" injection template adds the SPIRE agent UDS mount into istio-proxy.
-# Istio upstream recommends SPIFFE CSI volumes; this playground keeps a hostPath mount
-# to match the SPIRE agent socket published on the node.
-#
-# IMPORTANT: do not add this template to `defaultTemplates` globally — that can break
-# injection merges (invalid pods: missing istio-proxy image, duplicate init names).
-# Opt in per workload with `inject.istio.io/templates: sidecar,spire` (see main.tf).
+# SPIRE socket mounts for `istio-proxy` are attached per-workload using the standard
+# `sidecar.istio.io/userVolume` + `sidecar.istio.io/userVolumeMount` annotations (see main.tf).
+# A custom `spire` inject template that patches `containers: [{name: istio-proxy, ...}]`
+# breaks Istio 1.29's merge (invalid pods: missing proxy image / duplicate init names).
 resource "helm_release" "istiod" {
   name       = "istiod"
   repository = "https://istio-release.storage.googleapis.com/charts"
@@ -72,23 +69,6 @@ resource "helm_release" "istiod" {
               - "x-forwarded-client-cert"
               - "authorization"
 
-    sidecarInjectorWebhook:
-      templates:
-        spire: |
-          labels:
-            spiffe.io/spire-managed-identity: "true"
-          spec:
-            containers:
-              - name: istio-proxy
-                volumeMounts:
-                  - name: spire-agent-socket
-                    mountPath: /run/spire/sockets
-                    readOnly: true
-            volumes:
-              - name: spire-agent-socket
-                hostPath:
-                  path: /run/spire/agent-sockets
-                  type: Directory
   YAML
   ]
 }
