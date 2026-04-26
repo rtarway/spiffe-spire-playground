@@ -5,10 +5,10 @@ from fastapi import FastAPI, Depends, HTTPException, Security, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import json
 
-app = FastAPI(title="Megamart E-Commerce MCP Server")
+app = FastAPI(title="Edge demo MCP server")
 security = HTTPBearer()
 
-KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "http://keycloak.megamart-store-edge.svc.cluster.local:80/realms/megamart-edge")
+KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "http://keycloak.edge-demo-store-edge.svc.cluster.local:80/realms/edge-demo")
 JWKS_URL = f"{KEYCLOAK_URL}/protocol/openid-connect/certs"
 OPA_URL = os.getenv("OPA_URL", "http://127.0.0.1:9191").rstrip("/")
 

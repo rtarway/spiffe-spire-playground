@@ -17,7 +17,7 @@ messages if {
 validate_spiffe_id if {
     xfcc := headers["x-forwarded-client-cert"]
     # Verify the request originated from the AI Agent workload
-    contains(xfcc, "URI=spiffe://megamart.com/ns/megamart-store-apps/sa/ai-agent")
+    contains(xfcc, "URI=spiffe://example.com/ns/edge-demo-store-apps/sa/ai-agent")
 }
 
 # 3. Decode and validate the Token Claims (Application Identity)

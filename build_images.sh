@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 🛰️ The Great Forge: 16,000-Store Image Builder
-# This script builds the core edge images for the megamart.com fleet.
+# This script builds the core edge images for the example.com (fictitious) trust-domain demo.
 # Works with any local Docker daemon (Docker Desktop, Rancher Desktop, etc.).
 
 set -e

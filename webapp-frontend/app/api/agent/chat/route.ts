@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
  */
 const AI_AGENT_URL =
   process.env.AI_AGENT_URL ||
-  "http://ai-agent.megamart-store-apps.svc.cluster.local:8000";
+  "http://ai-agent.edge-demo-store-apps.svc.cluster.local:8000";
 
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("authorization");

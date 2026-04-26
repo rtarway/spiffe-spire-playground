@@ -23,17 +23,17 @@ provider "keycloak" {
   client_id = "admin-cli"
   url       = var.keycloak_url
   username  = "admin"
-  password  = "megamart_secure_admin_pass"
+  password  = "edge_demo_admin_pass"
 }
 
 # ==========================================
 # STAGE 1: GLOBAL IDENTITY AUTHORITY (CLOUD)
 # ==========================================
-# Birthed once to anchor the megamart.com trust domain.
+# Birthed once to anchor the example.com trust domain.
 
 resource "kubernetes_namespace" "cloud_tier" {
   metadata {
-    name = "megamart-cloud-tier"
+    name = "edge-demo-cloud-tier"
     labels = {
       "istio-injection" = "disabled"
     }
@@ -57,19 +57,19 @@ resource "helm_release" "spire_cloud" {
 
   set {
     name  = "global.spire.trustDomain"
-    value = "megamart.com"
+    value = "example.com"
   }
   set {
     name  = "global.spire.clusterName"
-    value = "megamart-cluster"
+    value = "edge-demo-cluster"
   }
   set {
     name  = "spire-server.ca_subject.common_name"
-    value = "megamart.com"
+    value = "example.com"
   }
   set {
     name  = "spire-server.ca_subject.organization"
-    value = "MegaMart"
+    value = "FictionalRetail"
   }
   set {
     # Obscured custom port for ultra secure setup
@@ -108,7 +108,7 @@ resource "helm_release" "spire_cloud" {
       registrar:
         enabled: true
         config:
-          cluster: "megamart-cluster"
+          cluster: "edge-demo-cluster"
       podAnnotations:
         sidecar.istio.io/inject: "false"
         traffic.sidecar.istio.io/excludeInboundPorts: "8081,8443"
@@ -127,7 +127,7 @@ resource "helm_release" "spire_cloud" {
 
 resource "kubernetes_namespace" "store_edge" {
   metadata {
-    name = "megamart-store-edge"
+    name = "edge-demo-store-edge"
     labels = {
       "istio-injection" = "disabled"
     }
@@ -136,7 +136,7 @@ resource "kubernetes_namespace" "store_edge" {
 
 resource "kubernetes_namespace" "store_apps" {
   metadata {
-    name = "megamart-store-apps"
+    name = "edge-demo-store-apps"
     labels = {
       # Istio 1.29 defaults to revision-based injection; the default revision is "default"
       # and the injector webhook excludes namespaces that set the legacy istio-injection label.
@@ -170,22 +170,22 @@ resource "null_resource" "spire_trust_bundle_sync" {
 
       echo "[1/4] Waiting for Cloud SPIRE Server to be Ready..."
       $KUBECTL wait --for=condition=Ready pod/spire-cloud-server-0 \
-        -n megamart-cloud-tier --timeout=120s
+        -n edge-demo-cloud-tier --timeout=120s
 
       echo "[2/4] Extracting Cloud Authority trust bundle..."
-      $KUBECTL exec -n megamart-cloud-tier spire-cloud-server-0 \
+      $KUBECTL exec -n edge-demo-cloud-tier spire-cloud-server-0 \
         -c spire-server -- \
         /opt/spire/bin/spire-server bundle show -format pem > /tmp/cloud-bundle.crt
 
       echo "[3/4] Injecting Cloud bundle into Edge namespace as spire-bundle ConfigMap..."
       $KUBECTL create configmap spire-bundle \
         --from-file=bundle.crt=/tmp/cloud-bundle.crt \
-        -n megamart-store-edge \
+        -n edge-demo-store-edge \
         --dry-run=client -o yaml | $KUBECTL apply -f -
 
       echo "[4/4] Restarting Edge Agent DaemonSet to pick up fresh bundle..."
-      $KUBECTL rollout restart daemonset/spire-edge-agent -n megamart-store-edge
-      $KUBECTL rollout status daemonset/spire-edge-agent -n megamart-store-edge --timeout=120s
+      $KUBECTL rollout restart daemonset/spire-edge-agent -n edge-demo-store-edge
+      $KUBECTL rollout status daemonset/spire-edge-agent -n edge-demo-store-edge --timeout=120s
 
       echo "Trust bundle sync complete."
     EOT
@@ -202,17 +202,17 @@ resource "helm_release" "spire_edge" {
 
   set {
     name  = "global.spire.trustDomain"
-    value = "megamart.com"
+    value = "example.com"
   }
 
   set {
     name  = "global.spire.clusterName"
-    value = "megamart-cluster"
+    value = "edge-demo-cluster"
   }
 
   set {
     name  = "spire-server.ca_subject.organization"
-    value = "MegaMart"
+    value = "FictionalRetail"
   }
 
   # NOTE: rootCas for upstream authority verification is handled by the
@@ -257,12 +257,12 @@ resource "helm_release" "spire_edge" {
         spire:
           enabled: true
           config:
-            serverAddr: "spire-cloud-server.megamart-cloud-tier.svc.cluster.local"
+            serverAddr: "spire-cloud-server.edge-demo-cloud-tier.svc.cluster.local"
             serverPort: 8443
       registrar:
         enabled: true
         config:
-          cluster: "megamart-cluster"
+          cluster: "edge-demo-cluster"
       podAnnotations:
         sidecar.istio.io/inject: "false"
         traffic.sidecar.istio.io/excludeInboundPorts: "8081,8443"
@@ -286,21 +286,21 @@ resource "null_resource" "spire_edge_config_patch" {
       KUBECTL="kubectl --context=${var.kube_context}"
 
       echo "Injecting UpstreamAuthority plugin into Edge Server ConfigMap..."
-      $KUBECTL patch configmap spire-edge-server -n megamart-store-edge --type merge -p '
+      $KUBECTL patch configmap spire-edge-server -n edge-demo-store-edge --type merge -p '
       data:
         server.conf: |
           server {
             bind_address = "0.0.0.0"
             bind_port = "8081"
-            trust_domain = "megamart.com"
+            trust_domain = "example.com"
             data_dir = "/run/spire/data"
             log_level = "info"
             ca_key_type = "rsa-2048"
             ca_ttl = "336h"
             ca_subject = {
               country = ["NL"],
-              organization = ["MegaMart"],
-              common_name = "megamart.com",
+              organization = ["FictionalRetail"],
+              common_name = "example.com",
             }
           }
           plugins {
@@ -313,8 +313,8 @@ resource "null_resource" "spire_edge_config_patch" {
             NodeAttestor "k8s_psat" {
               plugin_data {
                 clusters = {
-                  "megamart-cluster" = {
-                    service_account_allow_list = ["megamart-store-edge:spire-edge-agent"]
+                  "edge-demo-cluster" = {
+                    service_account_allow_list = ["edge-demo-store-edge:spire-edge-agent"]
                   }
                 }
               }
@@ -326,13 +326,13 @@ resource "null_resource" "spire_edge_config_patch" {
             }
             UpstreamAuthority "spire" {
               plugin_data {
-                server_address = "spire-cloud-server.megamart-cloud-tier.svc.cluster.local"
+                server_address = "spire-cloud-server.edge-demo-cloud-tier.svc.cluster.local"
                 server_port = 8443
               }
             }
             Notifier "k8sbundle" {
               plugin_data {
-                namespace = "megamart-store-edge"
+                namespace = "edge-demo-store-edge"
               }
             }
           }
@@ -346,10 +346,10 @@ resource "null_resource" "spire_edge_config_patch" {
       '
       
       echo "Patching Edge Agent DaemonSet port to 9981..."
-      $KUBECTL patch daemonset spire-edge-agent -n megamart-store-edge --type json -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/ports/0/containerPort", "value": 9981}]'
+      $KUBECTL patch daemonset spire-edge-agent -n edge-demo-store-edge --type json -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/ports/0/containerPort", "value": 9981}]'
       
       echo "Injecting socket_allow_all into Edge Agent ConfigMap..."
-      $KUBECTL patch configmap spire-edge-agent -n megamart-store-edge --type merge -p '
+      $KUBECTL patch configmap spire-edge-agent -n edge-demo-store-edge --type merge -p '
       data:
         agent.conf: |
           agent {
@@ -359,12 +359,12 @@ resource "null_resource" "spire_edge_config_patch" {
             server_port = "8081"
             socket_path = "/run/spire/sockets/spire-agent.sock"
             trust_bundle_path = "/run/spire/bundle/bundle.crt"
-            trust_domain = "megamart.com"
+            trust_domain = "example.com"
           }
           plugins {
             NodeAttestor "k8s_psat" {
               plugin_data {
-                cluster = "megamart-cluster"
+                cluster = "edge-demo-cluster"
               }
             }
             KeyManager "memory" {
@@ -387,12 +387,12 @@ resource "null_resource" "spire_edge_config_patch" {
       '
 
       echo "Restarting Edge Server to apply patched config..."
-      $KUBECTL rollout restart statefulset/spire-edge-server -n megamart-store-edge
-      $KUBECTL rollout status statefulset/spire-edge-server -n megamart-store-edge --timeout=120s
+      $KUBECTL rollout restart statefulset/spire-edge-server -n edge-demo-store-edge
+      $KUBECTL rollout status statefulset/spire-edge-server -n edge-demo-store-edge --timeout=120s
 
       echo "Restarting Edge Agent to apply patched config..."
-      $KUBECTL rollout restart daemonset/spire-edge-agent -n megamart-store-edge
-      $KUBECTL rollout status daemonset/spire-edge-agent -n megamart-store-edge --timeout=120s
+      $KUBECTL rollout restart daemonset/spire-edge-agent -n edge-demo-store-edge
+      $KUBECTL rollout status daemonset/spire-edge-agent -n edge-demo-store-edge --timeout=120s
     EOT
   }
 }
@@ -414,14 +414,14 @@ resource "kubernetes_config_map" "oidc_discovery_config" {
   data = {
     "oidc-discovery-provider.conf" = <<-EOT
       log_level = "info"
-      domains = ["spire-edge-spiffe-oidc-discovery-provider", "spire-edge-spiffe-oidc-discovery-provider.megamart-store-edge", "spire-edge-spiffe-oidc-discovery-provider.megamart-store-edge.svc.cluster.local", "localhost"]
+      domains = ["spire-edge-spiffe-oidc-discovery-provider", "spire-edge-spiffe-oidc-discovery-provider.edge-demo-store-edge", "spire-edge-spiffe-oidc-discovery-provider.edge-demo-store-edge.svc.cluster.local", "localhost"]
       acme {
         cache_dir = "/run/spire"
         tos_accepted = true
       }
       workload_api {
         socket_path = "/run/spire/agent-sockets/spire-agent.sock"
-        trust_domain = "megamart.com"
+        trust_domain = "example.com"
       }
       health_checks {
         bind_addr = ":8008"
@@ -505,11 +505,11 @@ resource "helm_release" "keycloak" {
   }
   set {
     name  = "auth.adminPassword"
-    value = "megamart_secure_admin_pass"
+    value = "edge_demo_admin_pass"
   }
   set {
     name  = "postgresql.auth.password"
-    value = "megamart_secure_db_pass"
+    value = "edge_demo_db_pass"
   }
   set {
     name  = "service.type"
@@ -540,27 +540,27 @@ resource "kubernetes_service_account" "keycloak_provisioner" {
 }
 #
 ## --- UNIFIED IDENTITY AUTHORITY: KEYCLOAK CONFIG ---
-## This section definitively anchors the Megamart identity realm.
+## This section definitively anchors the Edge demo identity realm.
 #
-resource "keycloak_realm" "megamart_edge" {
+resource "keycloak_realm" "edge_demo" {
   depends_on = [helm_release.keycloak]
-  realm      = "megamart-edge"
+  realm      = "edge-demo"
   enabled    = true
 }
 #
 resource "keycloak_role" "store_associate" {
-  realm_id = keycloak_realm.megamart_edge.id
+  realm_id = keycloak_realm.edge_demo.id
   name     = "store-associate"
 }
 #
 resource "keycloak_role" "mcp_executor" {
-  realm_id = keycloak_realm.megamart_edge.id
+  realm_id = keycloak_realm.edge_demo.id
   name     = "mcp-executor"
 }
 #
 ## 1. Device Client (Human Login)
 resource "keycloak_openid_client" "associate_device" {
-  realm_id                     = keycloak_realm.megamart_edge.id
+  realm_id                     = keycloak_realm.edge_demo.id
   client_id                    = "associate-device" # Reconciled with frontend expectation
   name                         = "Store Associate Device WebApp"
   enabled                      = true
@@ -572,7 +572,7 @@ resource "keycloak_openid_client" "associate_device" {
 }
 
 resource "keycloak_openid_audience_protocol_mapper" "ai_agent_audience_mapper" {
-  realm_id  = keycloak_realm.megamart_edge.id
+  realm_id  = keycloak_realm.edge_demo.id
   client_id = keycloak_openid_client.associate_device.id
   name      = "audience-mapper-ai-agent"
 
@@ -583,7 +583,7 @@ resource "keycloak_openid_audience_protocol_mapper" "ai_agent_audience_mapper" {
 #
 ## 2. MCP Server (Resource Server)
 resource "keycloak_openid_client" "mcp_server" {
-  realm_id                 = keycloak_realm.megamart_edge.id
+  realm_id                 = keycloak_realm.edge_demo.id
   client_id                = "mcp-server"
   name                     = "MCP Server API"
   enabled                  = true
@@ -596,7 +596,7 @@ resource "keycloak_openid_client" "mcp_server" {
 }
 
 resource "keycloak_openid_hardcoded_role_protocol_mapper" "mcp_executor_hardcoded" {
-  realm_id  = keycloak_realm.megamart_edge.id
+  realm_id  = keycloak_realm.edge_demo.id
   client_id = keycloak_openid_client.mcp_server.id
   name      = "hardcoded-mcp-executor"
   role_id   = keycloak_role.mcp_executor.id
@@ -604,7 +604,7 @@ resource "keycloak_openid_hardcoded_role_protocol_mapper" "mcp_executor_hardcode
 #
 ## 3. AI Agent (Sovereign Executor)
 resource "keycloak_openid_client" "ai_agent" {
-  realm_id                  = keycloak_realm.megamart_edge.id
+  realm_id                  = keycloak_realm.edge_demo.id
   client_id                 = "ai-agent"
   name                      = "AI Agent Backend"
   enabled                   = true
@@ -616,7 +616,7 @@ resource "keycloak_openid_client" "ai_agent" {
 #
 # 4. TOKEN EXCHANGE POLICY
 resource "keycloak_openid_client_permissions" "mcp_server_perms" {
-  realm_id  = keycloak_realm.megamart_edge.id
+  realm_id  = keycloak_realm.edge_demo.id
   client_id = keycloak_openid_client.mcp_server.id
 
   token_exchange_scope {
@@ -626,7 +626,7 @@ resource "keycloak_openid_client_permissions" "mcp_server_perms" {
 }
 
 resource "keycloak_openid_client_permissions" "associate_device_perms" {
-  realm_id  = keycloak_realm.megamart_edge.id
+  realm_id  = keycloak_realm.edge_demo.id
   client_id = keycloak_openid_client.associate_device.id
 
   token_exchange_scope {
@@ -636,7 +636,7 @@ resource "keycloak_openid_client_permissions" "associate_device_perms" {
 }
 #
 resource "keycloak_openid_client_client_policy" "ai_agent_policy" {
-  realm_id           = keycloak_realm.megamart_edge.id
+  realm_id           = keycloak_realm.edge_demo.id
   resource_server_id = keycloak_openid_client.mcp_server.id
   name               = "ai-agent-exchange-policy"
   clients            = [keycloak_openid_client.ai_agent.id]
@@ -645,14 +645,14 @@ resource "keycloak_openid_client_client_policy" "ai_agent_policy" {
 }
 #
 resource "keycloak_user" "associate_user" {
-  realm_id         = keycloak_realm.megamart_edge.id
+  realm_id         = keycloak_realm.edge_demo.id
   username         = "store-associate-user"
   enabled          = true
   email_verified   = true
   required_actions = []
   first_name       = "Store"
   last_name        = "Associate"
-  email            = "associate@megamart.com"
+  email            = "associate@example.com"
   initial_password {
     value     = "password"
     temporary = false
@@ -660,7 +660,7 @@ resource "keycloak_user" "associate_user" {
 }
 #
 resource "keycloak_user_roles" "associate_user_roles" {
-  realm_id = keycloak_realm.megamart_edge.id
+  realm_id = keycloak_realm.edge_demo.id
   user_id  = keycloak_user.associate_user.id
   role_ids = [
     keycloak_role.store_associate.id,
@@ -669,7 +669,7 @@ resource "keycloak_user_roles" "associate_user_roles" {
 }
 #
 resource "keycloak_user_roles" "ai_agent_sa_roles" {
-  realm_id = keycloak_realm.megamart_edge.id
+  realm_id = keycloak_realm.edge_demo.id
   user_id  = keycloak_openid_client.ai_agent.service_account_user_id
   role_ids = [keycloak_role.mcp_executor.id]
 }
@@ -819,7 +819,7 @@ resource "kubernetes_deployment" "mcp_server" {
           image_pull_policy = "Never"
           env {
             name  = "KEYCLOAK_URL"
-            value = "http://keycloak.megamart-store-edge.svc.cluster.local:80/realms/megamart-edge"
+            value = "http://keycloak.edge-demo-store-edge.svc.cluster.local:80/realms/edge-demo"
           }
           env {
             name  = "SPIFFE_ENDPOINT_SOCKET"
@@ -983,7 +983,7 @@ resource "kubernetes_manifest" "webapp_peer_auth" {
 ##     apiVersion = "security.istio.io/v1beta1"
 ##     kind       = "AuthorizationPolicy"
 ##             source = {
-##               principals = ["spiffe://megamart.com/ns/${kubernetes_namespace.store_apps.metadata[0].name}/sa/${kubernetes_service_account.ai_agent.metadata[0].name}"]
+##               principals = ["spiffe://example.com/ns/${kubernetes_namespace.store_apps.metadata[0].name}/sa/${kubernetes_service_account.ai_agent.metadata[0].name}"]
 ##             }
 ##           }]
 ##           to = [{
@@ -997,7 +997,7 @@ resource "kubernetes_manifest" "webapp_peer_auth" {
 ##         {
 ##           from = [{
 ##             source = {
-##               principals = ["spiffe://megamart.com/ns/${kubernetes_namespace.store_edge.metadata[0].name}/sa/${kubernetes_service_account.keycloak_provisioner.metadata[0].name}"]
+##               principals = ["spiffe://example.com/ns/${kubernetes_namespace.store_edge.metadata[0].name}/sa/${kubernetes_service_account.keycloak_provisioner.metadata[0].name}"]
 ##             }
 ##           }]
 ##           to = [{

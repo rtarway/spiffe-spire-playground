@@ -8,7 +8,7 @@
 
 const KEYCLOAK_TOKEN_URL =
     process.env.KEYCLOAK_TOKEN_URL ||
-    "http://localhost:30080/realms/megamart-edge/protocol/openid-connect/token";
+    "http://localhost:30080/realms/edge-demo/protocol/openid-connect/token";
 const WEBAPP_AGENT_URL =
     process.env.WEBAPP_AGENT_URL ||
     "http://localhost:30000/api/agent/chat";

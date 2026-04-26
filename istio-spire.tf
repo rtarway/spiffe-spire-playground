@@ -12,7 +12,7 @@ resource "helm_release" "istio_base" {
 }
 
 # --- ISTIOD: SPIRE as Unified Identity Authority ---
-# trustDomain is set to megamart.com to match SPIRE.
+# trustDomain is set to example.com (IANA reserved) to match SPIRE.
 # proxyMetadata.SPIFFE_ENDPOINT_SOCKET tells every istio-agent to fetch its
 # X.509 cert from the SPIRE Workload API socket instead of Citadel.
 # SPIRE socket mounts for `istio-proxy` are attached per-workload using the standard
@@ -29,8 +29,8 @@ resource "helm_release" "istiod" {
   values = [<<-YAML
     global:
       hub: "docker.io/istio"
-      trustDomain: "megamart.com"
-      meshID: "megamart.com"
+      trustDomain: "example.com"
+      meshID: "example.com"
       # Istio templates also inject `PILOT_CERT_PROVIDER` from this value for gateways/proxies.
       # If this stays at the default ("istiod"), but you intended SPIRE for the data plane only,
       # you can end up with duplicate/conflicting env vars unless this matches your intended provider.
@@ -40,7 +40,7 @@ resource "helm_release" "istiod" {
       # `meshConfig.defaultConfig.proxyMetadata.SPIFFE_ENDPOINT_SOCKET` below.
       pilotCertProvider: "istiod"
       multiCluster:
-        clusterName: "megamart-cluster"
+        clusterName: "edge-demo-cluster"
 
     pilot:
       volumeMounts:
@@ -54,7 +54,7 @@ resource "helm_release" "istiod" {
             type: Directory
 
     meshConfig:
-      trustDomain: "megamart.com"
+      trustDomain: "example.com"
       defaultConfig:
         # Forward mTLS client cert info to app containers (X-Forwarded-Client-Cert) for OPA / policy.rego.
         gatewayTopology:

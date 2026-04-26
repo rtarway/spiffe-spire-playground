@@ -18,7 +18,7 @@ export default function Home() {
       params.append("username", username);
       params.append("password", password);
       
-      const res = await fetch("http://localhost:30080/realms/megamart-edge/protocol/openid-connect/token", {
+      const res = await fetch("http://localhost:30080/realms/edge-demo/protocol/openid-connect/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: params.toString()
@@ -57,7 +57,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center p-10">
       <div className="w-full max-w-4xl p-8 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20">
         <h1 className="text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-          Megamart Edge Associate Tablet
+          Edge demo associate tablet
         </h1>
         
         {!token ? (

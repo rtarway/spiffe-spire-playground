@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Megamart Store Associate Tablet",
+  title: "Edge demo store associate tablet",
   description: "Offline-First Edge Agentic AI Interface",
 };
 

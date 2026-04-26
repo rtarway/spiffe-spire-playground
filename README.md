@@ -1,6 +1,6 @@
 # Sovereign Edge Identity (SPIRE + Istio + OPA)
 
-Enterprise-style playground for a **unified SPIRE-as-CA** identity model on Kubernetes: SPIRE is the workload identity authority, **Istio** uses the SPIRE Workload API for data-plane certificates, and **OPA** enforces ABAC on the MCP path. The trust domain is **`megamart.com`**.
+Enterprise-style playground for a **unified SPIRE-as-CA** identity model on Kubernetes: SPIRE is the workload identity authority, **Istio** uses the SPIRE Workload API for data-plane certificates, and **OPA** enforces ABAC on the MCP path. The trust domain is **`example.com`** (IANA-reserved; fictitious for this demo).
 
 ## Architecture (summary)
 
@@ -25,10 +25,10 @@ graph TD
   WEB --> KC
 ```
 
-- **SPIRE (cloud)**: Root-ish authority in `megamart-cloud-tier`, OIDC discovery enabled for Keycloak integration.
-- **SPIRE (edge)**: Subordinate server in `megamart-store-edge` upstream to cloud; trust bundle is synced into the edge namespace after Helm install.
+- **SPIRE (cloud)**: Root-ish authority in `edge-demo-cloud-tier`, OIDC discovery enabled for Keycloak integration.
+- **SPIRE (edge)**: Subordinate server in `edge-demo-store-edge` upstream to cloud; trust bundle is synced into the edge namespace after Helm install.
 - **Istio**: `istiod` in `istio-system`; mesh `trustDomain` and SPIFFE socket via `meshConfig.defaultConfig.proxyMetadata.SPIFFE_ENDPOINT_SOCKET` (see `istio-spire.tf`).
-- **Workloads** (`megamart-store-apps`): `ai-agent`, `mcp-server`, `webapp-frontend` use local images with `imagePullPolicy: Never`, host-mounted SPIRE socket, and OPA sidecars fed from a `ConfigMap` that includes `policy.rego` plus optional GitHub bundle sync.
+- **Workloads** (`edge-demo-store-apps`): `ai-agent`, `mcp-server`, `webapp-frontend` use local images with `imagePullPolicy: Never`, host-mounted SPIRE socket, and OPA sidecars fed from a `ConfigMap` that includes `policy.rego` plus optional GitHub bundle sync.
 
 ## Prerequisites
 
@@ -74,7 +74,7 @@ terraform apply -auto-approve
 ## Verification
 
 1. **Web UI**: `http://localhost:30000` (NodePort for `webapp-frontend`).
-2. **Keycloak admin**: `http://localhost:30080` (admin / `megamart_secure_admin_pass` — from Terraform).
+2. **Keycloak admin**: `http://localhost:30080` (admin / `edge_demo_admin_pass` — from Terraform).
 3. Log in via the app flow and exercise the agent (e.g. “show list of orders”).
 
 See **[README-MESH.md](README-MESH.md)** for Istio SPIRE SDS, OPA external authorization, and policy details.

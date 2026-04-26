@@ -15,10 +15,10 @@ This document matches the **current Terraform implementation** in this repo (not
 ## 2. Authorization flow (Istio + OPA)
 
 1. **OPA** runs as a **sidecar** in the `ai-agent` and `mcp-server` pods (`openpolicyagent/opa`), listening on **`:9191`**.
-2. **Config** comes from a **`ConfigMap`** (`opa-config`) in `megamart-store-apps`: `config.yaml` (GitHub bundle + polling) and **`policy.rego`** from the repo root (`main.tf` uses `file("${path.module}/policy.rego")`).
+2. **Config** comes from a **`ConfigMap`** (`opa-config`) in `edge-demo-store-apps`: `config.yaml` (GitHub bundle + polling) and **`policy.rego`** from the repo root (`main.tf` uses `file("${path.module}/policy.rego")`).
 3. **Istio** registers an **extension provider** `opa-ext-authz` pointing at **`127.0.0.1:9191`** with `includeRequestHeadersInCheck` for **`x-forwarded-client-cert`** and **`authorization`** so OPA can enforce both transport identity and JWT rules (`istio-spire.tf`).
 4. **`policy.rego`** (package `authz.allow.mcp`) requires:
-   - XFCC containing the AI Agent SPIFFE ID: `spiffe://megamart.com/ns/megamart-store-apps/sa/ai-agent`
+   - XFCC containing the AI Agent SPIFFE ID: `spiffe://example.com/ns/edge-demo-store-apps/sa/ai-agent`
    - JWT with **`mcp-executor`** and **not** the broad **`store-associate`** role (see `policy.rego`).
 
 ## 3. mTLS and exceptions

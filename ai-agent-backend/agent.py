@@ -6,14 +6,14 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from spiffe import WorkloadApiClient
 
-app = FastAPI(title="Megamart AI Agent Backend")
+app = FastAPI(title="Edge demo AI agent backend")
 security = HTTPBearer()
 
 # Intra-mesh only (webapp BFF); browsers should not call this service directly.
-KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "http://keycloak.megamart-store-edge.svc.cluster.local:80/realms/megamart-edge")
+KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "http://keycloak.edge-demo-store-edge.svc.cluster.local:80/realms/edge-demo")
 JWKS_URL = f"{KEYCLOAK_URL}/protocol/openid-connect/certs"
 TOKEN_ENDPOINT = f"{KEYCLOAK_URL}/protocol/openid-connect/token"
-MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://mcp-server.megamart-store-apps.svc.cluster.local:8001/mcp")
+MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://mcp-server.edge-demo-store-apps.svc.cluster.local:8001/mcp")
 
 class ChatRequest(BaseModel):
     prompt: str

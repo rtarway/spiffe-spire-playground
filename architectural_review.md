@@ -10,9 +10,9 @@ The design aims at a **zero-trust service mesh** where **workload identity** is 
 
 | Layer | Components |
 |-------|------------|
-| **Trust / identity** | SPIRE Cloud → SPIRE Edge; Istio `trustDomain: megamart.com`; proxies use `SPIFFE_ENDPOINT_SOCKET` for certs. |
+| **Trust / identity** | SPIRE Cloud → SPIRE Edge; Istio `trustDomain: example.com`; proxies use `SPIFFE_ENDPOINT_SOCKET` for certs. |
 | **Mesh** | Istio **STRICT** mTLS mesh-wide; `PeerAuthentication` **PERMISSIVE** on **Keycloak** and **webapp** so browsers can use **HTTP NodePorts** for login and UI. |
-| **OIDC** | Keycloak (`megamart-edge` realm): human tokens carry `store-associate`; token exchange yields `mcp-executor` for MCP. |
+| **OIDC** | Keycloak (`edge-demo` realm): human tokens carry `store-associate`; token exchange yields `mcp-executor` for MCP. |
 | **Apps** | Next.js **webapp** (BFF route + static UI), **ai-agent** (FastAPI), **mcp-server** (FastAPI tools). Each injected workload gets an **Envoy** sidecar + **OPA** sidecar where configured. |
 
 ### Critical pattern: browser never calls the AI agent
@@ -47,7 +47,7 @@ flowchart TB
         U[Browser]
     end
 
-    subgraph StoreApps["megamart-store-apps (injected workloads)"]
+    subgraph StoreApps["edge-demo-store-apps (injected workloads)"]
         subgraph WebappPod["webapp-frontend pod"]
             NEXT[Next.js UI]
             BFF["BFF: POST /api/agent/chat"]
@@ -70,7 +70,7 @@ flowchart TB
         EA --> AA
     end
 
-    subgraph StoreEdge["megamart-store-edge"]
+    subgraph StoreEdge["edge-demo-store-edge"]
         KC[Keycloak NodePort :30080]
     end
 
